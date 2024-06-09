@@ -157,7 +157,6 @@ export default async function convertM3U8toMP4(M3U8Url: string) {
   }
 
   let [parsedManifest, hasOnlyAudio] = await getManifestWithBestBandwidth(M3U8Url);
-  console.log(parsedManifest);
 
   if (!parsedManifest.segments.length) {
     log.error("At least one segment wasn't found");
