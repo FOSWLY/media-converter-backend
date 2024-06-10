@@ -24,7 +24,7 @@ async function clean(clearPath: string) {
 }
 
 await clean(path.join(config.app.publicPath, "media", "mp4")); // public
-await clean(path.join(__dirname, "../libs/converters/m3u8/temp")); // temp m3u8
+await clean(path.join(__dirname, "../libs/converters/temp")); // temp
 
 // signal to parent that the job is done
 if (parentPort) parentPort.postMessage("done");

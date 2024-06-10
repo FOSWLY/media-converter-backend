@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getManifestWithBestBandwidth, loadM3U8 } from "../../src/libs/converters/m3u8/parser";
+import { getManifestWithBestBandwidth, loadM3U8 } from "../src/libs/converters/m3u8/parser";
 
 describe("load M3U8 Manifest", () => {
   test("full manifest", async () => {
