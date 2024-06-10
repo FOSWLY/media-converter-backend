@@ -20,7 +20,7 @@ import {
 import { validateAuthToken } from "./libs/security";
 
 import healthController from "./controllers/health";
-import convertController from "./controllers/convert/m3u8-mp4";
+import convertController from "./controllers/convert";
 
 if (!fs.existsSync(config.logging.logPath)) {
   await mkdir(config.logging.logPath, { recursive: true });
