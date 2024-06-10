@@ -7,7 +7,7 @@ export default {
     hostname: "0.0.0.0",
   },
   app: {
-    name: "[FOSWLY] VOT Backend",
+    name: "[FOSWLY] Media Converter Backend",
     desc: "",
     version: "1.0.0",
     publicPath: path.join(__dirname, "..", "public"),
