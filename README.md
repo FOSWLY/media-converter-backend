@@ -38,5 +38,5 @@ bun install -g pm2 && pm2 install pm2-logrotate
 2. Запустите сервер
 
 ```bash
-pm2 start ecosystem.config.js
+pm2 start ecosystem.config.cjs
 ```
