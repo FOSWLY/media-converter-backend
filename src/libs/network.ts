@@ -1,4 +1,13 @@
-export async function fetchWithTimeout(url: string | URL | Request, options: any = {}) {
+import config from "../config";
+
+export async function fetchWithTimeout(
+  url: string | URL | Request,
+  options: any = {
+    headers: {
+      "User-Agent": config.converters.userAgent,
+    },
+  },
+) {
   const { timeout = 3000 } = options;
 
   const controller = new AbortController();

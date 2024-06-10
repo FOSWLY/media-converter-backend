@@ -2,9 +2,7 @@ import * as path from "node:path";
 
 import { log } from "../../../setup";
 
-import { m3u8Re, getManifestWithBestBandwidth } from "./parser";
-import { clearFileName, getFileNameByUrl } from "../../file";
-import { fetchWithTimeout } from "../../network";
+import { getManifestWithBestBandwidth, m4sRe } from "./parser";
 import {
   afterConvertCb,
   defaultOutPath,
@@ -12,20 +10,23 @@ import {
   ffmpegOnlyAudioOpts,
   getOpts,
 } from "../utils";
+import { clearFileName, getFileNameByUrl } from "../../file";
 import { replaceURLFileName } from "../m3u8-mpd-shared";
+import { convertM4avToMP4Internal, fetchM4av } from "../m4av/converter";
+import { fetchWithTimeout } from "../../network";
 
-interface MergeSegmentsOpts {
+type MergeSegmentsOpts = {
   tempPath?: string;
   outPath?: string;
   filename?: string;
-  originalM3U8Url?: string;
+  originalUrl?: string;
   hasOnlyAudio?: boolean;
-}
+};
 
-interface FetchSegmentsOpts {
+type FetchSegmentsOpts = {
   tempPath?: string;
   originalUrl?: string;
-}
+};
 
 async function fetchSegments(
   segments: Segment[],
@@ -36,14 +37,10 @@ async function fetchSegments(
       await Promise.all(
         segments
           .filter((segment: Segment) => {
-            return !(
-              segment.byterange &&
-              segment.byterange.offset > 0 &&
-              segment.uri === segments[0].uri
-            );
+            return !(segment.uri === segments[0].uri);
           })
           .map(async (segment: Segment) => {
-            const segmentUrl = replaceURLFileName(originalUrl, segment.uri, m3u8Re);
+            const segmentUrl = replaceURLFileName(originalUrl, segment.uri, m4sRe);
             try {
               const res = await fetchWithTimeout(segmentUrl);
               segment.content = await res.blob();
@@ -73,21 +70,19 @@ async function mergeSegments(
     tempPath = defaultTempPath,
     outPath = defaultOutPath,
     filename = "out.mp4",
-    originalM3U8Url = "",
+    originalUrl = "",
     hasOnlyAudio = false,
   }: MergeSegmentsOpts = {},
 ) {
-  const segmentListPath = path.join(tempPath, "ts_ls.txt");
+  const segmentListPath = path.join(tempPath, "m4s_ls.txt");
   let segmentsContent = "";
   for (const segment of segments) {
     if (!segment.content || !segment.content.size) {
-      log.debug(`Segment content not found. Original M3U8: ${originalM3U8Url}`);
+      log.debug(`Segment content not found. Original MPD: ${originalUrl}`);
       continue;
     }
 
-    const filenameFromUrl = getFileNameByUrl(
-      replaceURLFileName(originalM3U8Url, segment.uri, m3u8Re),
-    );
+    const filenameFromUrl = getFileNameByUrl(replaceURLFileName(originalUrl, segment.uri, m4sRe));
     const filePath = path.join(tempPath, filenameFromUrl);
     segmentsContent += `file '${filePath}'\n`;
   }
@@ -119,7 +114,7 @@ async function mergeSegments(
       onExit(_, exitCode, signalCode, error) {
         if (exitCode !== 0) {
           log.warn(
-            `FFmpeg exited with ${exitCode} code (${signalCode}). Error: ${error}. Detail: path - ${mp4FileName}, hasOnlyAudio: ${hasOnlyAudio}, originalM3U8Url: ${originalM3U8Url}`,
+            `FFmpeg exited with ${exitCode} code (${signalCode}). Error: ${error}. Detail: path - ${mp4FileName}, hasOnlyAudio: ${hasOnlyAudio}, originalUrl: ${originalUrl}`,
           );
         }
       },
@@ -130,25 +125,36 @@ async function mergeSegments(
   return true;
 }
 
-export default async function convertM3U8toMP4(url: string) {
-  // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)
-  // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower
+export default async function convertMPDtoMP4(url: string) {
   const { filename, outPath, tempPath } = await getOpts("mp4");
 
-  let [parsedManifest, hasOnlyAudio] = await getManifestWithBestBandwidth(url);
+  let [parsedManifest, hasOnlyAudio] = await getManifestWithBestBandwidth(url, url);
+  if (typeof parsedManifest === "string") {
+    const [file, filePath] = await fetchM4av(parsedManifest, { tempPath });
+    if (!file.size) {
+      return false;
+    }
 
-  if (!parsedManifest.segments.length) {
+    await convertM4avToMP4Internal(filePath, {
+      outPath,
+      filename,
+    });
+
+    return await afterConvertCb(tempPath, outPath, filename);
+  }
+
+  if (!(parsedManifest as Manifest).segments.length) {
     log.error("At least one segment wasn't found");
     return false;
   }
 
-  parsedManifest.segments = await fetchSegments(parsedManifest.segments, {
+  parsedManifest.segments = await fetchSegments(parsedManifest.segments as Segment[], {
     originalUrl: url,
     tempPath,
   });
 
   await mergeSegments(parsedManifest.segments, {
-    originalM3U8Url: url,
+    originalUrl: url,
     outPath,
     filename,
     tempPath,

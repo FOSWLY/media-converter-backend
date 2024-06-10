@@ -2,40 +2,11 @@ import { Parser } from "m3u8-parser";
 
 import config from "../../../config";
 
+import { getBestPlaylist, getMediaGroup, replaceURLFileName } from "../m3u8-mpd-shared";
 import { fetchWithTimeout } from "../../network";
 import { log } from "../../../setup";
 
-function getMediaGroup(mediaGroups: MediaGroup) {
-  return Object.values(Object.values(mediaGroups.AUDIO)[0])[0];
-}
-
-function getBestPlaylist(playlists: Playlist[]) {
-  return playlists.reduce((prev: Playlist, current: Playlist) =>
-    prev?.attributes?.BANDWIDTH > current?.attributes?.BANDWIDTH ? prev : current,
-  );
-}
-
-function replaceURLFileName(originalURL: string, newFileName: string): string {
-  // replace filename in originalURL (if it doesn't contain https)
-  if (/http(s)?:\/\//.test(newFileName)) {
-    log.debug("skip", originalURL, newFileName);
-    return newFileName;
-  }
-
-  if (!originalURL) {
-    return newFileName;
-  }
-
-  let completeUrl: URL = new URL(originalURL);
-  const filename = completeUrl.pathname.match(/([^/]+)\.m3u8/)?.[0];
-  if (!filename) {
-    log.info(`Unknown filename for ${completeUrl.href}`);
-    return "";
-  }
-
-  completeUrl.pathname = completeUrl.pathname.replace(filename, newFileName);
-  return completeUrl.href;
-}
+const m3u8Re = /([^/]+)\.m3u8/;
 
 async function downloadM3U8(url: string) {
   try {
@@ -83,16 +54,9 @@ async function getManifestWithBestBandwidth(url: string): Promise<[Manifest, boo
     ? getMediaGroup(parsedManifest.mediaGroups as MediaGroup)
     : getBestPlaylist(parsedManifest.playlists as Playlist[]);
 
-  url = replaceURLFileName(url, bestUrl.uri);
+  url = replaceURLFileName(url, bestUrl.uri, m3u8Re);
   parsedManifest = await loadM3U8(url);
   return [parsedManifest, hasOnlyAudio];
 }
 
-export {
-  getMediaGroup,
-  getBestPlaylist,
-  replaceURLFileName,
-  loadM3U8,
-  downloadM3U8,
-  getManifestWithBestBandwidth,
-};
+export { loadM3U8, downloadM3U8, getManifestWithBestBandwidth, m3u8Re };
