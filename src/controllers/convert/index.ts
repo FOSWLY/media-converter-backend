@@ -6,7 +6,7 @@ import { getPublicFilePath, getRemoveOnDate } from "../../libs/utils";
 import { ConvertBody } from "../../models/convert";
 import { mediaFormat } from "../../types/convert";
 
-import { BaseConverter } from "../../libs/converters/base";
+import BaseConverter from "../../libs/converters/base";
 import M4AVConverter from "../../libs/converters/m4av";
 import M3U8Converter from "../../libs/converters/m3u8";
 import MPDConverter from "../../libs/converters/mpd";
