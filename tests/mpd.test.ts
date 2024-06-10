@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { getManifestWithBestBandwidth } from "../src/libs/converters/mpd/parser";
+import MPDConverter from "../src/libs/converters/mpd";
 
 describe("load MPD Manifest", () => {
   // test("test segmented", async () => {
@@ -81,14 +81,14 @@ describe("load MPD Manifest", () => {
       </Period>
     </MPD>`;
 
-    const manifest = await getManifestWithBestBandwidth(
-      content,
+    const converter = new MPDConverter(
       "https://dash.akamaized.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd",
     );
 
-    expect(manifest).toEqual([
+    const manifest = await converter.getManifestWithBestBandwidth(content, converter.url);
+
+    expect(manifest).toEqual(
       "https://dash.akamaized.net/dash264/TestCases/1a/sony//DASH_vodaudio_Track5.m4a",
-      true,
-    ]);
+    );
   });
 });

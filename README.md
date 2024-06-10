@@ -6,7 +6,7 @@
 [![GitHub License](https://img.shields.io/github/license/FOSWLY/media-converter-backend?style=for-the-badge)](https://github.com/FOSWLY/media-converter-backend/blob/master/LICENSE)
 
 > [!WARNING]
-> Если конвертер находит отдельно аудио и видео дорожку, то конвертер в приоритетном режиме вернет видео с черным фоном и только аудио дорожкой.
+> Если конвертер находит отдельно аудио и видео дорожку, то конвертер в приоритетном режиме вернет видео с черным фоном и аудио дорожкой.
 
 **[FOSWLY] Media Converter Backend** - API для конвертации медиа различных форматов по ссылке.
 
