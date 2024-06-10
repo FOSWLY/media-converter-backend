@@ -15,4 +15,15 @@ export default new Bree({
       timeout: 0,
     },
   ],
+  errorHandler: (error, workerMetadata) => {
+    // workerMetadata will be populated with extended worker information only if
+    // Bree instance is initialized with parameter `workerMetadata: true`
+    log.error(
+      workerMetadata.threadId
+        ? `There was an error while running a worker ${workerMetadata.name} with thread ID: ${workerMetadata.threadId}`
+        : `There was an error while running a worker ${workerMetadata.name}`,
+    );
+
+    log.error(error);
+  },
 });
