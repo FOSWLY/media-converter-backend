@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import { Parser } from "m3u8-parser";
 
-import BaseConverter, { ffmpegOnlyAudioOpts } from "./base";
+import BaseConverter from "./base";
 import { clearFileName, getFileNameByUrl } from "../file";
 import { fetchWithTimeout } from "../network";
 import config from "../../config";
@@ -14,6 +14,11 @@ export default class M3U8Converter extends BaseConverter {
   hasOnlyAudio: boolean = false;
   segmentRe = /([^/]+)\.m3u8/;
   fileRe = this.segmentRe;
+
+  ffmpegOnlyAudioOpts =
+    `-loop 1 -i ${path.join(config.app.publicPath, "black.png")} -pix_fmt yuv420p -tune stillimage -shortest -crf 0`.split(
+      " ",
+    );
 
   getMediaGroup(mediaGroups: MediaGroup) {
     return Object.values(Object.values(mediaGroups.AUDIO)[0])[0];
@@ -172,7 +177,7 @@ export default class M3U8Converter extends BaseConverter {
         "0",
         "-i",
         segmentListPath,
-        ...(hasOnlyAudio ? ffmpegOnlyAudioOpts : []),
+        ...(hasOnlyAudio ? this.ffmpegOnlyAudioOpts : []),
         "-c",
         "copy",
         mp4FileName,

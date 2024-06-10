@@ -7,8 +7,6 @@ import config from "../../config";
 import { log } from "../../setup";
 
 export default class M4AVConverter extends BaseConverter {
-  blackImg: string = path.join(config.app.publicPath, "black.png");
-
   async fetchM4av(url: string): Promise<[Blob, string]> {
     let file = new Blob([]);
     try {
@@ -42,7 +40,9 @@ export default class M4AVConverter extends BaseConverter {
         "-add",
         filePath,
         ...(hasOnlyAudio ? ["-add", this.blackImg] : []),
-        "-mpeg4",
+        // if don't add meta, ffmpeg will give an error about missing headers
+        "-patch",
+        this.mediaMeta,
         "-quiet",
         "-new",
         mp4FileName,

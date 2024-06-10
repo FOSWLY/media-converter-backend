@@ -8,12 +8,11 @@ import { log } from "../../setup";
 import { mediaFormat } from "../../types/convert";
 
 const defaultTempPath = path.join(__dirname, "temp");
-export const ffmpegOnlyAudioOpts =
-  `-loop 1 -i ${path.join(config.app.publicPath, "black.png")} -pix_fmt yuv420p -tune stillimage -shortest -crf 0`.split(
-    " ",
-  );
 
 export default class BaseConverter {
+  blackImg: string = path.join(config.app.publicPath, "black.png");
+  mediaMeta: string = path.join(config.app.publicPath, "meta.xml");
+
   tempPath: string;
   outPath: string;
 
