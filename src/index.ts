@@ -41,7 +41,11 @@ const app = new Elysia({ prefix: "/v1" })
   )
   .use(setupElysia)
   .use(HttpStatusCode())
-  .use(staticPlugin())
+  .use(
+    staticPlugin({
+      alwaysStatic: false,
+    }),
+  )
   .error({
     UNAUTHORIZED_ERROR: UnAuthorizedError,
     INTERNAL_SERVER_ERROR: InternalServerError,
