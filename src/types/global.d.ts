@@ -7,3 +7,9 @@ declare module "m3u8-parser" {
     manifest: Manifest;
   }
 }
+
+declare module "mpd-parser" {
+  // return m3u8 manifest
+  const parse: (manifest: string, options: unknown = {}) => Manifest;
+  const VERSION: string;
+}
