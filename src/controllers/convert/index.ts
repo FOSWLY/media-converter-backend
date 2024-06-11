@@ -31,7 +31,6 @@ export default new Elysia().group("/convert", (app) =>
       }
 
       const convertedFile = await converter.convert();
-
       if (!convertedFile || !(await convertedFile.exists())) {
         throw new FailedConvertMedia();
       }
