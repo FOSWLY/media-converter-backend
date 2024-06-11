@@ -3,7 +3,7 @@ import { LoggerLevel } from "./types/logging";
 
 export default {
   server: {
-    port: 3001,
+    port: Bun.env.SERVICE_PORT ?? 3001,
     hostname: "0.0.0.0",
   },
   app: {
