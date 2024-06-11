@@ -7,6 +7,8 @@ const sqids = new Sqids({
   alphabet: Bun.env.HASH_ALPHABET,
 });
 
+const publicPrefix = "/v1/public";
+
 function getUid() {
   const numberCode = +`${Math.floor(Date.now() / 1000)}`;
   return sqids.encode([numberCode]);
@@ -26,6 +28,7 @@ function getRemoveOnDate() {
 function getPublicFilePath(file: BunFile) {
   return (
     config.app.hostname +
+    publicPrefix +
     file.name?.replace(config.app.publicPath, "").replaceAll("\\\\", "/").replaceAll("\\", "/")
   );
 }

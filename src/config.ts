@@ -11,7 +11,7 @@ export default {
     desc: "",
     version: "1.0.0",
     publicPath: path.join(__dirname, "..", "public"),
-    hostname: "http://127.0.0.1:3001/v1/public", // domain for public access
+    hostname: Bun.env.SERVICE_HOSTNAME ?? "http://127.0.0.1:3001", // domain for public access
   },
   logging: {
     level: LoggerLevel.INFO,
