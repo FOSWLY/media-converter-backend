@@ -103,5 +103,3 @@ log.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 (async () => {
   await bree.start();
 })();
-
-export type App = typeof app;

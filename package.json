@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@bogeychan/elysia-logger": "^0.0.22",
-    "@elysiajs/eden": "^1.0.14",
     "@elysiajs/static": "^1.0.3",
     "@elysiajs/swagger": "^1.0.5",
     "bree": "^9.2.3",
