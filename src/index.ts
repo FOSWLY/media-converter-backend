@@ -80,8 +80,7 @@ const app = new Elysia({ prefix: "/v1" })
     };
   })
   .use(healthController)
-  .group(
-    "",
+  .guard(
     {
       headers: t.Object({
         authorization: t.String({
@@ -92,8 +91,7 @@ const app = new Elysia({ prefix: "/v1" })
         if (!validateAuthToken(authorization)) return;
       },
     },
-    // @ts-ignore: TS2345
-    (app: Elysia) => app.use(convertController),
+    (app) => app.use(convertController),
   )
   .listen({
     port: config.server.port,
@@ -105,3 +103,5 @@ log.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 (async () => {
   await bree.start();
 })();
+
+export type App = typeof app;
