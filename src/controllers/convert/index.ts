@@ -1,9 +1,8 @@
-import { Elysia, t } from "elysia";
-import { BunFile } from "bun";
+import { Elysia } from "elysia";
 
 import { FailedConvertMedia } from "../../errors";
 import { getPublicFilePath, getRemoveOnDate } from "../../libs/utils";
-import { ConvertBody } from "../../models/convert";
+import { convertModels } from "../../models/convert.model";
 import { mediaFormat } from "../../types/convert";
 
 import BaseConverter from "../../libs/converters/base";
@@ -12,7 +11,7 @@ import M3U8Converter from "../../libs/converters/m3u8";
 import MPDConverter from "../../libs/converters/mpd";
 
 export default new Elysia().group("/convert", (app) =>
-  app.post(
+  app.use(convertModels).post(
     "/",
     async ({ body: { direction, file } }) => {
       // const content = typeof file === "string" ? await downloadM3U8(file) : await file.text();
@@ -43,7 +42,7 @@ export default new Elysia().group("/convert", (app) =>
       };
     },
     {
-      body: ConvertBody,
+      body: "convert",
     },
   ),
 );
