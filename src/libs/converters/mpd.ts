@@ -80,6 +80,7 @@ export default class MPDConverter extends M3U8Converter {
   }
 
   async convertToMP4() {
+    await this.createOutDir();
     let parsedManifest = await this.getManifestWithBestBandwidth(this.url, this.url);
     if (typeof parsedManifest === "string") {
       return await new M4AVConverter(parsedManifest, this.format).convertToMP4();

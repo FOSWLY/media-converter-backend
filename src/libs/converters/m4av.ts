@@ -63,6 +63,7 @@ export default class M4AVConverter extends BaseConverter {
   }
 
   async convertToMP4() {
+    await this.createOutDir();
     const [file, filePath] = await this.fetchM4av(this.url);
     if (!file.size) {
       return false;

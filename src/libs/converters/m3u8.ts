@@ -177,7 +177,7 @@ export default class M3U8Converter extends BaseConverter {
         "0",
         "-i",
         segmentListPath,
-        ...(hasOnlyAudio ? this.ffmpegOnlyAudioOpts : []),
+        // ...(hasOnlyAudio ? this.ffmpegOnlyAudioOpts : []),
         "-c",
         "copy",
         mp4FileName,
@@ -198,6 +198,7 @@ export default class M3U8Converter extends BaseConverter {
   }
 
   async convertToMP4() {
+    await this.createOutDir();
     let parsedManifest = await this.getManifestWithBestBandwidth(this.url);
 
     if (!parsedManifest.segments.length) {
