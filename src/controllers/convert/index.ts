@@ -16,21 +16,21 @@ export default new Elysia().group("/convert", (app) =>
     async ({ body: { direction, file } }) => {
       // const content = typeof file === "string" ? await downloadM3U8(file) : await file.text();
       const [fromFormat, toFormat] = direction.split("-") as mediaFormat[];
-      let converter: BaseConverter = new BaseConverter(file, toFormat);
+      let converter = BaseConverter;
       switch (direction) {
         case "m3u8-mp4":
-          converter = new M3U8Converter(file, toFormat);
+          converter = M3U8Converter;
           break;
         case "m4a-mp4":
         case "m4v-mp4":
-          converter = new M4AVConverter(file, toFormat);
+          converter = M4AVConverter;
           break;
         case "mpd-mp4":
-          converter = new MPDConverter(file, toFormat);
+          converter = MPDConverter;
           break;
       }
 
-      const convertedFile = await converter.convert();
+      const convertedFile = await new converter(file, toFormat).convert();
       if (!convertedFile || !(await convertedFile.exists())) {
         throw new FailedConvertMedia();
       }
