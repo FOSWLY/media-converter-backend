@@ -1,3 +1,12 @@
+declare module "bun" {
+  interface Env {
+    SERVICE_TOKEN: string;
+    SERVICE_PORT: number;
+    SERVICE_HOSTNAME: string;
+    HASH_ALPHABET: string;
+  }
+}
+
 declare module "m3u8-parser" {
   class Parser<T> {
     // based on https://github.com/videojs/m3u8-parser/pull/111/files
