@@ -12,6 +12,7 @@ export default {
     version: "1.0.0",
     publicPath: path.join(__dirname, "..", "public"),
     hostname: Bun.env.SERVICE_HOSTNAME ?? "http://127.0.0.1:3001", // domain for public access
+    scalarCDN: "https://unpkg.com/@scalar/api-reference@1.15.1/dist/browser/standalone.js",
   },
   logging: {
     level: LoggerLevel.INFO,

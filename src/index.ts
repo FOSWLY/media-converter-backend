@@ -31,6 +31,7 @@ const app = new Elysia({ prefix: "/v1" })
   .use(
     swagger({
       path: "/docs",
+      scalarCDN: config.app.scalarCDN,
       documentation: {
         info: {
           title: config.app.name,
