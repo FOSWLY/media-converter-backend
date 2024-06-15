@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { LoggerLevel } from "./types/logging";
+import { version } from "../package.json";
 
 export default {
   server: {
@@ -9,10 +10,13 @@ export default {
   app: {
     name: "[FOSWLY] Media Converter Backend",
     desc: "",
-    version: "1.0.0",
+    version,
+    license: "MIT",
+    github_url: "https://github.com/FOSWLY/media-converter-backend",
+    contact_email: "me@toil.cc",
+    scalarCDN: "https://unpkg.com/@scalar/api-reference@1.15.1/dist/browser/standalone.js",
     publicPath: path.join(__dirname, "..", "public"),
     hostname: Bun.env.SERVICE_HOSTNAME ?? "http://127.0.0.1:3001", // domain for public access
-    scalarCDN: "https://unpkg.com/@scalar/api-reference@1.15.1/dist/browser/standalone.js",
   },
   logging: {
     level: LoggerLevel.INFO,

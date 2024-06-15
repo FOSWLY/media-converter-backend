@@ -42,6 +42,10 @@ export default new Elysia().group("/convert", (app) =>
     },
     {
       body: "convert",
+      detail: {
+        summary: "Convert video url to media file",
+        tags: ["Convert"],
+      },
     },
   ),
 );
