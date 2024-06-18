@@ -38,6 +38,11 @@ export default class BaseConverter {
       await mkdir(this.outPath, { recursive: true });
     }
 
+    // additional check, without this some times we get an error "No such file or directory"
+    if (!(await exists(this.tempPath))) {
+      await mkdir(this.tempPath, { recursive: true });
+    }
+
     return this;
   }
 
