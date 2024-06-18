@@ -10,7 +10,8 @@ import { log } from "../../setup";
 
 export default class M3U8Converter extends BaseConverter {
   // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)
-  // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower
+  // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower\
+  // 8 times faster than default ffmpeg m3u8-mp4
   hasOnlyAudio: boolean = false;
   segmentRe = /([^/]+)\.m3u8/;
   fileRe = this.segmentRe;
