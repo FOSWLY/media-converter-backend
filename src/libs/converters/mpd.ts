@@ -1,4 +1,4 @@
-import { log } from "../../setup";
+import { log } from "../../logging";
 
 import M4AVConverter from "./m4av";
 import M3U8Converter from "./m3u8";

@@ -6,7 +6,7 @@ import BaseConverter from "./base";
 import { clearFileName, getFileNameByUrl } from "../file";
 import { fetchWithTimeout } from "../network";
 import config from "../../config";
-import { log } from "../../setup";
+import { log } from "../../logging";
 
 export default class M3U8Converter extends BaseConverter {
   // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)

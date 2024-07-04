@@ -4,6 +4,10 @@ declare module "bun" {
     SERVICE_PORT: number;
     SERVICE_HOSTNAME: string;
     HASH_ALPHABET: string;
+    LOKI_HOST: string;
+    LOKI_USER: string;
+    LOKI_PASSWORD: string;
+    NODE_ENV: string;
   }
 }
 

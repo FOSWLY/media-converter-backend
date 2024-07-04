@@ -4,7 +4,7 @@ import BaseConverter from "./base";
 import { fetchWithTimeout } from "../network";
 import { clearFileName, getFileNameByUrl } from "../file";
 import config from "../../config";
-import { log } from "../../setup";
+import { log } from "../../logging";
 
 export default class M4AVConverter extends BaseConverter {
   async fetchM4av(url: string): Promise<[Blob, string]> {

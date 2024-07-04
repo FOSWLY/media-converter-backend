@@ -4,8 +4,9 @@ import { mkdir, rmdir, exists } from "node:fs/promises";
 
 import config from "../../config";
 import { getUid } from "../utils";
-import { log } from "../../setup";
+import { log } from "../../logging";
 import { mediaFormat } from "../../types/convert";
+import { BunFile } from "bun";
 
 const defaultTempPath = path.join(__dirname, "temp");
 
@@ -58,7 +59,7 @@ export default class BaseConverter {
     throw new Error("Not implemented");
   }
 
-  async convert(): Promise<any> {
+  async convert(): Promise<BunFile> {
     switch (this.format) {
       case "mp4":
         return this.convertToMP4();

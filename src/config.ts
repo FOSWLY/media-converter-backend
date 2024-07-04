@@ -1,5 +1,6 @@
 import * as path from "node:path";
-import { LoggerLevel } from "./types/logging";
+import { type Level } from "pino";
+
 import { version } from "../package.json";
 
 export default {
@@ -19,9 +20,13 @@ export default {
     hostname: Bun.env.SERVICE_HOSTNAME ?? "http://127.0.0.1:3001", // domain for public access
   },
   logging: {
-    level: LoggerLevel.INFO,
-    logRequests: false, // for debugging (true/false)
+    level: (Bun.env.NODE_ENV === "production" ? "info" : "debug") as Level,
     logPath: path.join(__dirname, "..", "logs"),
+    loki: {
+      host: Bun.env.LOKI_HOST ?? "",
+      user: Bun.env.LOKI_USER ?? "",
+      password: Bun.env.LOKI_PASSWORD ?? "",
+    },
   },
   converters: {
     bannedChars: ["\\", "/", ":", "*", "?", '"', "<", ">", "|"],

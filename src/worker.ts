@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import Bree from "bree";
 
-import { log } from "./setup";
+import { log } from "./logging";
 
 export default new Bree({
   logger: log,

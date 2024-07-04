@@ -8,7 +8,7 @@ import { HttpStatusCode } from "elysia-http-status-code";
 
 import config from "./config";
 import bree from "./worker";
-import setupElysia, { log } from "./setup";
+import { log } from "./logging";
 import {
   InternalServerError,
   UnAuthorizedError,
@@ -48,7 +48,6 @@ const app = new Elysia({ prefix: "/v1" })
       },
     }),
   )
-  .use(setupElysia)
   .use(HttpStatusCode())
   .use(
     staticPlugin({
