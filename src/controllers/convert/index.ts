@@ -1,3 +1,4 @@
+import { BunFile } from "bun";
 import { Elysia } from "elysia";
 
 import { FailedConvertMedia } from "../../errors";
@@ -9,13 +10,15 @@ import BaseConverter from "../../libs/converters/base";
 import M4AVConverter from "../../libs/converters/m4av";
 import M3U8Converter from "../../libs/converters/m3u8";
 import MPDConverter from "../../libs/converters/mpd";
+import { log } from "../../logging";
+
+const MAX_TIME_TO_CONVERT = 30_000; // 30 secs
 
 export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
     "/",
     async ({ body: { direction, file } }) => {
-      // const content = typeof file === "string" ? await downloadM3U8(file) : await file.text();
-      const [fromFormat, toFormat] = direction.split("-") as mediaFormat[];
+      const [_, toFormat] = direction.split("-") as mediaFormat[];
       let converter = BaseConverter;
       switch (direction) {
         case "m3u8-mp4":
@@ -30,8 +33,23 @@ export default new Elysia().group("/convert", (app) =>
           break;
       }
 
-      const convertedFile = await new converter(file, toFormat).convert();
+      let timedOut = false;
+      const convertedFile = (await Promise.race([
+        new Promise((resolve) => resolve(new converter(file, toFormat).convert())),
+        new Promise((resolve) =>
+          setTimeout(() => {
+            timedOut = true;
+            resolve(null);
+          }, MAX_TIME_TO_CONVERT),
+        ),
+      ])) as BunFile | null;
       if (!convertedFile || !(await convertedFile.exists())) {
+        log[timedOut ? "warn" : "debug"](
+          { file, direction },
+          timedOut
+            ? `Convert timed out after ${MAX_TIME_TO_CONVERT} ms`
+            : "Failed to convert media",
+        );
         throw new FailedConvertMedia();
       }
 
