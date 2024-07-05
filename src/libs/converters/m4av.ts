@@ -51,7 +51,8 @@ export default class M4AVConverter extends BaseConverter {
         onExit(_, exitCode, signalCode, error) {
           if (exitCode !== 0) {
             log.warn(
-              `MP4Box exited with ${exitCode} code (${signalCode}). Error: ${error}. Detail: path - ${mp4FileName}, hasOnlyAudio: ${hasOnlyAudio}`,
+              { path: mp4FileName, hasOnlyAudio },
+              `MP4Box exited with ${exitCode} code (${signalCode}). Error: ${error}`,
             );
           }
         },

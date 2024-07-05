@@ -151,7 +151,7 @@ export default class M3U8Converter extends BaseConverter {
     let segmentsContent = "";
     for (const segment of segments) {
       if (!segment.content || !segment.content.size) {
-        log.debug(`Segment content not found. Original url: ${mediaUrl}`);
+        log.debug({ originalUrl: mediaUrl }, `Segment content not found.`);
         continue;
       }
 
@@ -187,7 +187,12 @@ export default class M3U8Converter extends BaseConverter {
         onExit(_, exitCode, signalCode, error) {
           if (exitCode !== 0) {
             log.warn(
-              `FFmpeg exited with ${exitCode} code (${signalCode}). Error: ${error}. Detail: path - ${mp4FileName}, hasOnlyAudio: ${hasOnlyAudio}, origin url: ${mediaUrl}`,
+              {
+                path: mp4FileName,
+                hasOnlyAudio,
+                originalUrl: mediaUrl,
+              },
+              `FFmpeg exited with ${exitCode} code (${signalCode}). Error: ${error}.`,
             );
           }
         },
