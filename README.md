@@ -40,3 +40,7 @@ bun install -g pm2 && pm2 install pm2-logrotate
 ```bash
 pm2 start ecosystem.config.cjs
 ```
+
+## Архитектурная схема
+
+<img width="3984" alt="media-converter-backend" src="https://github.com/FOSWLY/media-converter-backend/assets/62353659/af351561-0993-4711-84d3-342a80fb4eb9">
