@@ -2,7 +2,7 @@ import { getUid } from "./utils";
 
 import config from "../config";
 
-function clearFileName(filename: string, filetype: string = ""): string {
+function clearFileName(filename: string, filetype = ""): string {
   if (filename.trim().length === 0) {
     return getUid() + filetype;
   }

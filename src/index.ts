@@ -68,6 +68,7 @@ const app = new Elysia({ prefix: "/v1" })
           detail: "Route not found :(",
         };
       case "VALIDATION":
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return error.all;
       case "FAILED_CONVERT_MEDIA":
         set.status = httpStatus.HTTP_500_INTERNAL_SERVER_ERROR;
@@ -108,6 +109,6 @@ const app = new Elysia({ prefix: "/v1" })
 
 log.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 
-(async () => {
+void (async () => {
   await bree.start();
 })();

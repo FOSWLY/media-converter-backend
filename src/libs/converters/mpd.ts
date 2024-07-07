@@ -3,6 +3,7 @@ import { log } from "../../logging";
 import M4AVConverter from "./m4av";
 import M3U8Converter from "./m3u8";
 import { parse } from "mpd-parser";
+import { AudioGroupItem, Manifest, Playlist } from "../../types/m3u8";
 
 export default class MPDConverter extends M3U8Converter {
   m4avRe = /\.m4(a|v)/;
@@ -18,7 +19,7 @@ export default class MPDConverter extends M3U8Converter {
     // filter title for twitch m3u8 modified format
     // we believe that streams have a duration of < 1 sec
     manifest.segments = manifest.segments.filter(
-      (segment) => segment.duration >= 1 && (segment as any)?.title !== "live",
+      (segment) => segment.duration >= 1 && segment?.title !== "live",
     );
 
     return manifest;
@@ -42,14 +43,14 @@ export default class MPDConverter extends M3U8Converter {
       return false;
     }
 
-    const playlist = this.getBestPlaylist((candidate as AudioGroupItem).playlists as Playlist[]);
+    const playlist = this.getBestPlaylist((candidate as AudioGroupItem).playlists!);
     return this.getBestMPDFile(playlist, false);
   }
 
-  // @ts-ignore: TS2416
+  // @ts-expect-error: TS2416
   async getManifestWithBestBandwidth(
     content: string,
-    templateUrl: string = "",
+    templateUrl = "",
   ): Promise<Manifest | string> {
     let parsedManifest = await this.loadManifest(content);
     if (!parsedManifest.playlists?.length && !parsedManifest.mediaGroups?.AUDIO) {
@@ -62,8 +63,8 @@ export default class MPDConverter extends M3U8Converter {
     );
 
     const candidate = this.hasOnlyAudio
-      ? this.getMediaGroup(parsedManifest.mediaGroups as MediaGroup)
-      : this.getBestPlaylist(parsedManifest.playlists as Playlist[]);
+      ? this.getMediaGroup(parsedManifest.mediaGroups!)
+      : this.getBestPlaylist(parsedManifest.playlists!);
 
     const bestUrl = this.getBestMPDFile(candidate, this.hasOnlyAudio);
     if (!bestUrl) {
@@ -81,17 +82,17 @@ export default class MPDConverter extends M3U8Converter {
 
   async convertToMP4() {
     await this.createOutDir();
-    let parsedManifest = await this.getManifestWithBestBandwidth(this.url, this.url);
+    const parsedManifest = await this.getManifestWithBestBandwidth(this.url, this.url);
     if (typeof parsedManifest === "string") {
       return await new M4AVConverter(parsedManifest, this.format).convertToMP4();
     }
 
-    if (!(parsedManifest as Manifest).segments.length) {
+    if (!parsedManifest.segments.length) {
       log.error("At least one segment wasn't found");
       return false;
     }
 
-    parsedManifest.segments = await this.fetchSegments(parsedManifest.segments as Segment[]);
+    parsedManifest.segments = await this.fetchSegments(parsedManifest.segments);
     await this.mergeSegments(parsedManifest.segments);
 
     return await this.afterConvertCb();

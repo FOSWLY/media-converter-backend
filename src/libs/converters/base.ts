@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable sonarjs/no-small-switch */
+/* eslint-disable @typescript-eslint/require-await */
 import * as path from "node:path";
-
 import { mkdir, rmdir, exists } from "node:fs/promises";
 
 import config from "../../config";
 import { getUid } from "../utils";
 import { log } from "../../logging";
 import { mediaFormat } from "../../types/convert";
-import { BunFile } from "bun";
 
 const defaultTempPath = path.join(__dirname, "temp");
 
@@ -59,12 +60,12 @@ export default class BaseConverter {
     throw new Error("Not implemented");
   }
 
-  async convert(): Promise<BunFile> {
+  async convert(): Promise<any> {
     switch (this.format) {
       case "mp4":
-        return this.convertToMP4();
+        return await this.convertToMP4();
+      default:
+        throw new Error("Not implemented");
     }
-
-    throw new Error("Unsupported media format");
   }
 }

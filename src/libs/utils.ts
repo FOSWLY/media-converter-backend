@@ -19,7 +19,7 @@ function getCurrentDate() {
 }
 
 function getRemoveOnDate() {
-  let removeOn = new Date();
+  const removeOn = new Date();
   removeOn.setDate(removeOn.getDate() + 1);
   removeOn.setHours(2, 0, 0, 0);
   return removeOn.toLocaleString("sv", { timeZoneName: "short" });

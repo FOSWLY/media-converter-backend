@@ -1,4 +1,5 @@
-interface Segment {
+export type Segment = {
+  title?: string;
   duration: number;
   uri: string;
   timeline: number;
@@ -8,9 +9,9 @@ interface Segment {
     offset: number;
   };
   content?: Blob; // custom
-}
+};
 
-interface PlaylistAttribute {
+export type PlaylistAttribute = {
   NAME?: string;
   AUDIO: string;
   SUBTITLES?: "subs";
@@ -24,9 +25,9 @@ interface PlaylistAttribute {
   BANDWIDTH: number;
   "CLOSED-CAPTIONS": string;
   "PROGRAM-ID": number;
-}
+};
 
-interface Playlist {
+export type Playlist = {
   attributes: PlaylistAttribute;
   uri: string;
   endList?: boolean;
@@ -37,26 +38,26 @@ interface Playlist {
   mediaSequence?: number;
   discontinuitySequence?: number;
   segments?: Segment[];
-}
+};
 
-interface AudioGroupItem {
+export type AudioGroupItem = {
   language?: string;
   default: boolean;
   autoselect: boolean;
   playlists?: Playlist[];
   uri: string;
-}
+};
 
-interface MediaGroup {
+export type MediaGroup = {
   AUDIO: Record<string, Record<string, AudioGroupItem>>;
   VIDEO: object;
   "CLOSED-CAPTIONS": object;
   SUBTITLES: object;
-}
+};
 
-type TimelineStart = { start: number; timeline: number };
+export type TimelineStart = { start: number; timeline: number };
 
-interface Manifest {
+export type Manifest = {
   allowCache: boolean;
   discontinuityStarts: number[];
   dateRanges: unknown[]; // ?
@@ -72,4 +73,4 @@ interface Manifest {
   mediaGroups?: MediaGroup;
   playlists?: Playlist[];
   timelineStarts?: TimelineStart[];
-}
+};

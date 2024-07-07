@@ -7,12 +7,13 @@ import { clearFileName, getFileNameByUrl } from "../file";
 import { fetchWithTimeout } from "../network";
 import config from "../../config";
 import { log } from "../../logging";
+import { Manifest, MediaGroup, Playlist, Segment } from "../../types/m3u8";
 
 export default class M3U8Converter extends BaseConverter {
   // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)
   // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower\
   // 8 times faster than default ffmpeg m3u8-mp4
-  hasOnlyAudio: boolean = false;
+  hasOnlyAudio = false;
   segmentRe = /([^/]+)\.m3u8/;
   fileRe = this.segmentRe;
 
@@ -42,7 +43,7 @@ export default class M3U8Converter extends BaseConverter {
       return newFileName;
     }
 
-    let completeUrl: URL = new URL(originalURL);
+    const completeUrl = new URL(originalURL);
     const filename = completeUrl.pathname.match(this.fileRe)?.[0];
     if (!filename) {
       log.info(`Unknown filename for ${completeUrl.href}`);
@@ -62,8 +63,8 @@ export default class M3U8Converter extends BaseConverter {
       });
 
       return await res.text();
-    } catch (err: any) {
-      log.error(`Failed to download manifest: ${url}. Error: ${err.message}`);
+    } catch (err: unknown) {
+      log.error(`Failed to download manifest: ${url}. Error: ${(err as Error).message}`);
       return "";
     }
   }
@@ -80,7 +81,7 @@ export default class M3U8Converter extends BaseConverter {
     // filter title for twitch m3u8 modified format
     // we believe that streams have a duration of < 1 sec
     manifest.segments = manifest.segments.filter(
-      (segment) => segment.duration >= 1 && (segment as any)?.title !== "live",
+      (segment) => segment.duration >= 1 && segment?.title !== "live",
     );
 
     return manifest;
@@ -98,8 +99,8 @@ export default class M3U8Converter extends BaseConverter {
     );
 
     const bestUrl = this.hasOnlyAudio
-      ? this.getMediaGroup(parsedManifest.mediaGroups as MediaGroup)
-      : this.getBestPlaylist(parsedManifest.playlists as Playlist[]);
+      ? this.getMediaGroup(parsedManifest.mediaGroups!)
+      : this.getBestPlaylist(parsedManifest.playlists!);
 
     url = this.replaceURLFileName(url, bestUrl.uri);
     parsedManifest = await this.loadManifest(url);
@@ -150,7 +151,7 @@ export default class M3U8Converter extends BaseConverter {
     const segmentListPath = path.join(this.tempPath, "sls.txt");
     let segmentsContent = "";
     for (const segment of segments) {
-      if (!segment.content || !segment.content.size) {
+      if (!segment.content?.size) {
         log.debug({ originalUrl: mediaUrl }, `Segment content not found.`);
         continue;
       }
@@ -191,8 +192,9 @@ export default class M3U8Converter extends BaseConverter {
                 path: mp4FileName,
                 hasOnlyAudio,
                 originalUrl: mediaUrl,
+                error,
               },
-              `FFmpeg exited with ${exitCode} code (${signalCode}). Error: ${error}.`,
+              `FFmpeg exited with ${exitCode} code (${signalCode})`,
             );
           }
         },
@@ -205,7 +207,7 @@ export default class M3U8Converter extends BaseConverter {
 
   async convertToMP4() {
     await this.createOutDir();
-    let parsedManifest = await this.getManifestWithBestBandwidth(this.url);
+    const parsedManifest = await this.getManifestWithBestBandwidth(this.url);
 
     if (!parsedManifest.segments.length) {
       log.error("At least one segment wasn't found");

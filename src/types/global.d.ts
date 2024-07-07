@@ -12,17 +12,20 @@ declare module "bun" {
 }
 
 declare module "m3u8-parser" {
-  class Parser<T> {
+  class Parser {
     // based on https://github.com/videojs/m3u8-parser/pull/111/files
     constructor();
     push: (string: string) => void;
     end: () => void;
-    manifest: Manifest;
+    manifest: import("./m3u8").Manifest;
   }
 }
 
 declare module "mpd-parser" {
   // return m3u8 manifest
-  const parse: (manifest: string, options: unknown = {}) => Manifest;
+  const parse: (
+    manifest: string,
+    options: Record<unknown, unknown> = {},
+  ) => import("./m3u8").Manifest;
   const VERSION: string;
 }

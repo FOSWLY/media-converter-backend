@@ -18,6 +18,7 @@ export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
     "/",
     async ({ body: { direction, file } }) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_, toFormat] = direction.split("-") as mediaFormat[];
       let converter = BaseConverter;
       switch (direction) {
