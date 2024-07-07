@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "NODE_ENV=development bun run --watch src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
-    "lint": "npx oxlint && npx eslint",
+    "lint": "bunx oxlint && bunx eslint",
     "prepare": "husky"
   },
   "dependencies": {
