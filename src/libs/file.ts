@@ -25,4 +25,18 @@ function getFileNameByUrl(fileUrl: string): string {
   return clearFileName(pathArray?.[pathArray.length - 1]);
 }
 
-export { clearFileName, getFileNameByUrl };
+function getInfoByFileName(filename: string) {
+  const parts = filename.split(".");
+  const ext = parts.length > 1 ? parts.pop()! : "";
+  return {
+    ext,
+    filename: parts.join().trim(),
+  };
+}
+
+function appendToFileName(filename: string, text: string): string {
+  const { ext, filename: name } = getInfoByFileName(filename);
+  return name + text + (ext ? `.${ext}` : "");
+}
+
+export { clearFileName, getFileNameByUrl, getInfoByFileName, appendToFileName };

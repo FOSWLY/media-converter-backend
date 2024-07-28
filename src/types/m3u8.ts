@@ -9,6 +9,7 @@ export type Segment = {
     offset: number;
   };
   content?: Blob; // custom
+  filePath?: string; // custom
 };
 
 export type PlaylistAttribute = {

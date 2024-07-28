@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { Parser } from "m3u8-parser";
 
 import BaseConverter from "./base";
-import { clearFileName, getFileNameByUrl } from "../file";
+import { appendToFileName, getFileNameByUrl } from "../file";
 import { fetchWithTimeout } from "../network";
 import config from "../../config";
 import { log } from "../../logging";
@@ -112,17 +112,35 @@ export default class M3U8Converter extends BaseConverter {
       new Set(
         await Promise.all(
           segments
-            .filter((segment: Segment) => {
+            .filter((segment: Segment, idx: number) => {
+              if (segment.uri.includes(".ts") || idx === 0) {
+                return true;
+              }
+
               return !(
                 segment.byterange &&
                 segment.byterange.offset > 0 &&
                 segment.uri === segments[0].uri
               );
             })
-            .map(async (segment: Segment) => {
+            .map(async (segment: Segment, idx: number) => {
               const segmentUrl = this.replaceURLFileName(this.url, segment.uri);
+              const isPartial =
+                segment.uri.includes(".ts") && segment.byterange
+                  ? !!segments.find(
+                      (seg) =>
+                        seg.uri === segment.uri &&
+                        seg.byterange?.offset === segment.byterange?.offset,
+                    )
+                  : false;
               try {
-                const res = await fetchWithTimeout(segmentUrl);
+                const res = await fetchWithTimeout(segmentUrl, {
+                  headers: {
+                    Range: isPartial
+                      ? `bytes=${segment.byterange!.offset}-${segment.byterange!.offset + segment.byterange!.length}`
+                      : "bytes=0-",
+                  },
+                });
                 segment.content = await res.blob();
               } catch (err) {
                 log.debug(`Failed to download segment from ${segmentUrl}`);
@@ -133,9 +151,14 @@ export default class M3U8Converter extends BaseConverter {
                 return segment;
               }
 
-              const filename = getFileNameByUrl(segmentUrl);
-              const filePath = path.join(this.tempPath, filename);
-              await Bun.write(filePath, segment.content);
+              let filename = getFileNameByUrl(segmentUrl);
+              if (isPartial) {
+                filename = appendToFileName(filename, `_${idx}`);
+                segment.uri = filename;
+              }
+
+              segment.filePath = path.join(this.tempPath, filename);
+              await Bun.write(segment.filePath, segment.content);
 
               return segment;
             }),
@@ -147,6 +170,7 @@ export default class M3U8Converter extends BaseConverter {
   async mergeSegments(segments: Segment[]) {
     const mediaUrl = this.url;
     const hasOnlyAudio = this.hasOnlyAudio;
+    const outputFilePath = this.outputFilePath;
 
     const segmentListPath = path.join(this.tempPath, "sls.txt");
     let segmentsContent = "";
@@ -156,14 +180,10 @@ export default class M3U8Converter extends BaseConverter {
         continue;
       }
 
-      const filenameFromUrl = getFileNameByUrl(this.replaceURLFileName(mediaUrl, segment.uri));
-      const filePath = path.join(this.tempPath, filenameFromUrl);
-      segmentsContent += `file '${filePath}'\n`;
+      segmentsContent += `file '${segment.filePath}'\n`;
     }
 
     await Bun.write(segmentListPath, segmentsContent);
-
-    const mp4FileName = path.join(this.outPath, clearFileName(this.filename, ".mp4"));
 
     // by deleting unnecessary information in the console, performance increases several times (if a lot of errors occur during conversion that do not affect the result. 48s --> 14s)
     const proc = Bun.spawn(
@@ -182,14 +202,14 @@ export default class M3U8Converter extends BaseConverter {
         // ...(hasOnlyAudio ? this.ffmpegOnlyAudioOpts : []),
         "-c",
         "copy",
-        mp4FileName,
+        outputFilePath,
       ],
       {
         onExit(_, exitCode, signalCode, error) {
           if (exitCode !== 0) {
             log.warn(
               {
-                path: mp4FileName,
+                path: outputFilePath,
                 hasOnlyAudio,
                 originalUrl: mediaUrl,
                 error,

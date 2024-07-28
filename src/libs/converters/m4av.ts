@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import BaseConverter from "./base";
 import { fetchWithTimeout } from "../network";
-import { clearFileName, getFileNameByUrl } from "../file";
+import { getFileNameByUrl } from "../file";
 import config from "../../config";
 import { log } from "../../logging";
 
@@ -31,7 +31,7 @@ export default class M4AVConverter extends BaseConverter {
   }
 
   async convertToMP4Impl(filePath: string) {
-    const mp4FileName = path.join(this.outPath, clearFileName(this.filename, ".mp4"));
+    const outputFilePath = this.outputFilePath;
     const hasOnlyAudio = !!filePath.match(/\.m4a/);
 
     const proc = Bun.spawn(
@@ -45,13 +45,13 @@ export default class M4AVConverter extends BaseConverter {
         this.mediaMeta,
         "-quiet",
         "-new",
-        mp4FileName,
+        outputFilePath,
       ],
       {
         onExit(_, exitCode, signalCode, error) {
           if (exitCode !== 0) {
             log.warn(
-              { path: mp4FileName, hasOnlyAudio, error },
+              { path: outputFilePath, hasOnlyAudio, error },
               `MP4Box exited with ${exitCode} code (${signalCode})`,
             );
           }

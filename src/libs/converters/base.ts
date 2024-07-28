@@ -8,6 +8,7 @@ import config from "../../config";
 import { getUid } from "../utils";
 import { log } from "../../logging";
 import { mediaFormat } from "../../types/convert";
+import { clearFileName } from "../file";
 
 const defaultTempPath = path.join(__dirname, "temp");
 
@@ -17,6 +18,7 @@ export default class BaseConverter {
 
   tempPath: string;
   outPath: string;
+  outputFilePath: string;
 
   url: string;
   filename: string;
@@ -32,6 +34,7 @@ export default class BaseConverter {
     const currentDate = new Date().toLocaleDateString().replaceAll(".", "-").replaceAll("/", "-");
     this.tempPath = path.join(defaultTempPath, currentDate, fileUUID);
     this.outPath = path.join(config.app.publicPath, "media", format, currentDate);
+    this.outputFilePath = path.join(this.outPath, clearFileName(this.filename, `.${format}`));
   }
 
   async createOutDir() {
