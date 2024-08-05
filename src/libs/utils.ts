@@ -1,17 +1,9 @@
-import Sqids from "sqids";
 import config from "../config";
 import { BunFile } from "bun";
-
-const sqids = new Sqids({
-  minLength: 8,
-  alphabet: Bun.env.HASH_ALPHABET,
-});
-
-const publicPrefix = "/v1/public";
+import { log } from "../logging";
 
 function getUid() {
-  const numberCode = +`${Math.floor(Date.now() / 1000)}`;
-  return sqids.encode([numberCode]);
+  return Bun.hash.wyhash(Date.now().toString(), config.converters.seed).toString(16);
 }
 
 function getCurrentDate() {
@@ -22,15 +14,37 @@ function getRemoveOnDate() {
   const removeOn = new Date();
   removeOn.setDate(removeOn.getDate() + 1);
   removeOn.setHours(2, 0, 0, 0);
-  return removeOn.toLocaleString("sv", { timeZoneName: "short" });
+  return removeOn.toISOString();
 }
 
 function getPublicFilePath(file: BunFile) {
   return (
     config.app.hostname +
-    publicPrefix +
+    config.converters.publicPrefix +
     file.name?.replace(config.app.publicPath, "").replaceAll("\\\\", "/").replaceAll("\\", "/")
   );
 }
 
-export { getUid, getCurrentDate, getRemoveOnDate, getPublicFilePath };
+async function asyncWithTimelimit(
+  maxTime: number,
+  task: Promise<unknown>,
+  failureValue: unknown = null,
+) {
+  let timer: Timer | null = null;
+  const response = await Promise.race([
+    task,
+    new Promise((resolve) => {
+      timer = setTimeout(() => {
+        log.warn(`async function timed out after ${maxTime} ms`);
+        resolve(failureValue);
+      }, maxTime);
+    }),
+  ]);
+  if (timer) {
+    clearTimeout(timer);
+  }
+
+  return response;
+}
+
+export { getUid, getCurrentDate, getRemoveOnDate, getPublicFilePath, asyncWithTimelimit };
