@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable sonarjs/no-small-switch */
 /* eslint-disable @typescript-eslint/require-await */
-import * as path from "node:path";
+import path from "node:path";
 import { mkdir, rmdir, exists } from "node:fs/promises";
 
 import config from "../../config";
 import { getUid } from "../utils";
 import { log } from "../../logging";
-import { mediaFormat } from "../../types/convert";
+import { MediaFormat } from "../../types/convert";
 import { clearFileName } from "../file";
+import { ErrorLike, SpawnOptions, Subprocess } from "bun";
 
 const defaultTempPath = path.join(__dirname, "temp");
 
@@ -22,9 +23,9 @@ export default class BaseConverter {
 
   url: string;
   filename: string;
-  format: mediaFormat;
+  format: MediaFormat;
 
-  constructor(url: string, format: mediaFormat = "mp4") {
+  constructor(url: string, format: MediaFormat = "mp4") {
     this.url = url;
     this.format = format;
 
@@ -35,6 +36,56 @@ export default class BaseConverter {
     this.tempPath = path.join(defaultTempPath, currentDate, fileUUID);
     this.outPath = path.join(config.app.publicPath, "media", format, currentDate);
     this.outputFilePath = path.join(this.outPath, clearFileName(this.filename, `.${format}`));
+  }
+
+  onExit(
+    _: Subprocess<SpawnOptions.Writable, SpawnOptions.Readable, SpawnOptions.Readable>,
+    exitCode: number | null,
+    signalCode: number | null,
+    error: ErrorLike | undefined,
+    converter = "Converter",
+  ) {
+    if (exitCode !== 0) {
+      log.warn(
+        {
+          path: this.outputFilePath,
+          originalUrl: this.url,
+          error,
+        },
+        `${converter} exited with ${exitCode} code (${signalCode})`,
+      );
+    }
+  }
+
+  async convertWithYTdlp(url: string) {
+    // ! don't use:
+    // * -P instead of -o just to set a custom folder for temporary files (it's 4 times slower!)
+    // * --force-overwrites (1.75 times slower, but the probability of colic is too low to sacrifice speed so much)
+    log.debug("Start converting with yt-dlp");
+    const proc = Bun.spawn(
+      [
+        "yt-dlp",
+        "-o",
+        this.outputFilePath,
+        "--external-downloader",
+        "aria2c",
+        "--external-downloader-args",
+        "aria2c:-x 16 -k 1M",
+        url,
+        "--quiet",
+        "--no-warnings",
+      ],
+      {
+        onExit: (_, exitCode, signalCode, error) =>
+          this.onExit(_, exitCode, signalCode, error, "yt-dlp"),
+      },
+    );
+    log.debug("await finish converting with yt-dlp");
+    await proc.exited;
+    log.debug("converting with yt-dlp finished");
+    proc.kill();
+
+    return true;
   }
 
   async createOutDir() {
