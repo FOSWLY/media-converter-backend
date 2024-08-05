@@ -4,9 +4,19 @@ declare module "bun" {
     SERVICE_PORT: number;
     SERVICE_HOSTNAME: string;
     HASH_ALPHABET: string;
+    POSTGRES_NAME: string;
+    POSTGRES_HOST: string;
+    POSTGRES_PORT: number;
+    POSTGRES_USER: string;
+    POSTGRES_PASSWORD: string;
+    REDIS_HOST: string;
+    REDIS_PORT: number;
+    REDIS_USER: string;
+    REDIS_PASSWORD: string;
     LOKI_HOST: string;
     LOKI_USER: string;
     LOKI_PASSWORD: string;
+    SEED: string;
     NODE_ENV: string;
   }
 }
