@@ -1,4 +1,4 @@
-import * as path from "node:path";
+import path from "node:path";
 
 import BaseConverter from "./base";
 import { fetchWithTimeout } from "../network";
@@ -16,7 +16,7 @@ export default class M4AVConverter extends BaseConverter {
         },
       });
       file = await res.blob();
-    } catch (err) {
+    } catch {
       log.debug(`Failed to download m4av from ${url}`);
     }
 
@@ -32,7 +32,7 @@ export default class M4AVConverter extends BaseConverter {
 
   async convertToMP4Impl(filePath: string) {
     const outputFilePath = this.outputFilePath;
-    const hasOnlyAudio = !!filePath.match(/\.m4a/);
+    const hasOnlyAudio = !!/\.m4a/.exec(filePath);
 
     const proc = Bun.spawn(
       [
@@ -48,14 +48,8 @@ export default class M4AVConverter extends BaseConverter {
         outputFilePath,
       ],
       {
-        onExit(_, exitCode, signalCode, error) {
-          if (exitCode !== 0) {
-            log.warn(
-              { path: outputFilePath, hasOnlyAudio, error },
-              `MP4Box exited with ${exitCode} code (${signalCode})`,
-            );
-          }
-        },
+        onExit: (_, exitCode, signalCode, error) =>
+          this.onExit(_, exitCode, signalCode, error, "MP4Box"),
       },
     );
     await proc.exited;
