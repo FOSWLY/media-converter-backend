@@ -1,4 +1,4 @@
-import * as path from "node:path";
+import path from "node:path";
 
 import { Parser } from "m3u8-parser";
 
@@ -8,10 +8,12 @@ import { fetchWithTimeout } from "../network";
 import config from "../../config";
 import { log } from "../../logging";
 import { Manifest, MediaGroup, Playlist, Segment } from "../../types/m3u8";
+import { ErrorLike, SpawnOptions, Subprocess } from "bun";
 
 export default class M3U8Converter extends BaseConverter {
   // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)
-  // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower\
+  // +-performance as multi-threading m3u8_To_MP4 (Python | https://github.com/sounghaohao/m3u8_To_MP4). Sometimes faster, sometimes slower
+  // 1.5-2 times faster than yt-dlp + multi-threading aria2c (--external-downloader aria2c --external-downloader-args "aria2c:-x 16 -k 1M")
   // 8 times faster than default ffmpeg m3u8-mp4
   hasOnlyAudio = false;
   segmentRe = /([^/]+)\.m3u8/;
@@ -71,7 +73,7 @@ export default class M3U8Converter extends BaseConverter {
 
   async loadManifest(content: string) {
     const parser = new Parser();
-    const manifestText = content.match(/http(s)?:\/\//)
+    const manifestText = /http(s)?:\/\//.exec(content)
       ? await this.downloadManifest(content)
       : content;
     parser.push(manifestText);
@@ -103,6 +105,7 @@ export default class M3U8Converter extends BaseConverter {
       : this.getBestPlaylist(parsedManifest.playlists!);
 
     url = this.replaceURLFileName(url, bestUrl.uri);
+    this.url = url;
     parsedManifest = await this.loadManifest(url);
     return parsedManifest;
   }
@@ -142,7 +145,7 @@ export default class M3U8Converter extends BaseConverter {
                   },
                 });
                 segment.content = await res.blob();
-              } catch (err) {
+              } catch {
                 log.debug(`Failed to download segment from ${segmentUrl}`);
                 segment.content = new Blob([]);
               }
@@ -167,16 +170,32 @@ export default class M3U8Converter extends BaseConverter {
     );
   }
 
-  async mergeSegments(segments: Segment[]) {
-    const mediaUrl = this.url;
-    const hasOnlyAudio = this.hasOnlyAudio;
-    const outputFilePath = this.outputFilePath;
+  onExit(
+    _: Subprocess<SpawnOptions.Writable, SpawnOptions.Readable, SpawnOptions.Readable>,
+    exitCode: number | null,
+    signalCode: number | null,
+    error: ErrorLike | undefined,
+    converter = "Converter",
+  ) {
+    if (exitCode !== 0) {
+      log.warn(
+        {
+          path: this.outputFilePath,
+          hasOnlyAudio: this.hasOnlyAudio,
+          originalUrl: this.url,
+          error,
+        },
+        `${converter} exited with ${exitCode} code (${signalCode})`,
+      );
+    }
+  }
 
+  async mergeSegments(segments: Segment[]) {
     const segmentListPath = path.join(this.tempPath, "sls.txt");
     let segmentsContent = "";
     for (const segment of segments) {
       if (!segment.content?.size) {
-        log.debug({ originalUrl: mediaUrl }, `Segment content not found.`);
+        log.debug({ originalUrl: this.url }, `Segment content not found.`);
         continue;
       }
 
@@ -202,22 +221,11 @@ export default class M3U8Converter extends BaseConverter {
         // ...(hasOnlyAudio ? this.ffmpegOnlyAudioOpts : []),
         "-c",
         "copy",
-        outputFilePath,
+        this.outputFilePath,
       ],
       {
-        onExit(_, exitCode, signalCode, error) {
-          if (exitCode !== 0) {
-            log.warn(
-              {
-                path: outputFilePath,
-                hasOnlyAudio,
-                originalUrl: mediaUrl,
-                error,
-              },
-              `FFmpeg exited with ${exitCode} code (${signalCode})`,
-            );
-          }
-        },
+        onExit: (_, exitCode, signalCode, error) =>
+          this.onExit(_, exitCode, signalCode, error, "FFmpeg"),
       },
     );
     await proc.exited;
@@ -228,14 +236,18 @@ export default class M3U8Converter extends BaseConverter {
   async convertToMP4() {
     await this.createOutDir();
     const parsedManifest = await this.getManifestWithBestBandwidth(this.url);
-
     if (!parsedManifest.segments.length) {
       log.error("At least one segment wasn't found");
       return false;
     }
 
-    parsedManifest.segments = await this.fetchSegments(parsedManifest.segments);
-    await this.mergeSegments(parsedManifest.segments);
+    if (parsedManifest.segments.find((segment) => segment.uri.includes(".cmfa"))) {
+      // ffmpeg or mp4box can't convert .cmfa to mp4
+      await this.convertWithYTdlp(this.url);
+    } else {
+      parsedManifest.segments = await this.fetchSegments(parsedManifest.segments);
+      await this.mergeSegments(parsedManifest.segments);
+    }
 
     return await this.afterConvertCb();
   }
