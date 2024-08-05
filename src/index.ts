@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 import { mkdir } from "node:fs/promises";
 
 import { Elysia, t } from "elysia";
@@ -7,7 +7,6 @@ import { staticPlugin } from "@elysiajs/static";
 import { HttpStatusCode } from "elysia-http-status-code";
 
 import config from "./config";
-import bree from "./worker";
 import { log } from "./logging";
 import {
   InternalServerError,
@@ -21,6 +20,7 @@ import { validateAuthToken } from "./libs/security";
 
 import healthController from "./controllers/health";
 import convertController from "./controllers/convert";
+import { initCleaner } from "./worker";
 
 if (!fs.existsSync(config.logging.logPath)) {
   await mkdir(config.logging.logPath, { recursive: true });
@@ -54,6 +54,11 @@ const app = new Elysia({ prefix: "/v1" })
       alwaysStatic: false,
     }),
   )
+  .onRequest(({ set }) => {
+    for (const [key, val] of Object.entries(config.cors)) {
+      set.headers[key] = val;
+    }
+  })
   .error({
     UNAUTHORIZED_ERROR: UnAuthorizedError,
     INTERNAL_SERVER_ERROR: InternalServerError,
@@ -68,7 +73,6 @@ const app = new Elysia({ prefix: "/v1" })
           detail: "Route not found :(",
         };
       case "VALIDATION":
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return error.all;
       case "FAILED_CONVERT_MEDIA":
         set.status = httpStatus.HTTP_500_INTERNAL_SERVER_ERROR;
@@ -110,5 +114,5 @@ const app = new Elysia({ prefix: "/v1" })
 log.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 
 void (async () => {
-  await bree.start();
+  await initCleaner();
 })();
