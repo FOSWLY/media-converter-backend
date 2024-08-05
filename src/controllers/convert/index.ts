@@ -1,62 +1,88 @@
-import { BunFile } from "bun";
 import { Elysia } from "elysia";
 
-import { FailedConvertMedia } from "../../errors";
-import { getPublicFilePath, getRemoveOnDate } from "../../libs/utils";
 import { convertModels } from "../../models/convert.model";
-import { mediaFormat } from "../../types/convert";
-
-import BaseConverter from "../../libs/converters/base";
-import M4AVConverter from "../../libs/converters/m4av";
-import M3U8Converter from "../../libs/converters/m3u8";
-import MPDConverter from "../../libs/converters/mpd";
+import { converterQueue } from "../../worker";
+import config from "../../config";
+import ConvertFacade from "../../facades/convert";
+import { getRemoveOnDate } from "../../libs/utils";
 import { log } from "../../logging";
-
-const MAX_TIME_TO_CONVERT = 30_000; // 30 secs
 
 export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
     "/",
     async ({ body: { direction, file } }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [_, toFormat] = direction.split("-") as mediaFormat[];
-      let converter = BaseConverter;
-      switch (direction) {
-        case "m3u8-mp4":
-          converter = M3U8Converter;
-          break;
-        case "m4a-mp4":
-        case "m4v-mp4":
-          converter = M4AVConverter;
-          break;
-        case "mpd-mp4":
-          converter = MPDConverter;
-          break;
+      const file_hash = Bun.hash.wyhash(file, config.converters.seed).toString(16);
+      const convert = await new ConvertFacade().get({
+        direction,
+        file_hash,
+      });
+
+      const convertStatus = String(convert?.status);
+      let isOutdated = false;
+      if (convertStatus === "success") {
+        // if the time is close to deleting the data, then we make it obsolete
+        const convertDate = new Date(convert!.created_at);
+        const currentTime = Date.now();
+        const potentialOutdateTime = new Date(convertDate).setHours(2, 0, 0, 0);
+
+        // currentTime > potentialOutdateTime = false (too new, maybe the cleaning has already been done today)
+        // potentialOutdateTime - config.db.outdatedInAdvance < convertDate.getTime() = false (it has already been done this day and will not be deleted during cleaning)
+        isOutdated =
+          currentTime < potentialOutdateTime
+            ? convertDate.getTime() < potentialOutdateTime - config.db.outdatedInAdvance
+            : false;
+        log.debug(
+          {
+            isOutdated,
+            convertDate,
+            currentTime,
+            potentialOutdateTime,
+          },
+          `Convert status: ${isOutdated ? "outdated" : "actual"}`,
+        );
       }
 
-      let timedOut = false;
-      const convertedFile = (await Promise.race([
-        new Promise((resolve) => resolve(new converter(file, toFormat).convert())),
-        new Promise((resolve) =>
-          setTimeout(() => {
-            timedOut = true;
-            resolve(null);
-          }, MAX_TIME_TO_CONVERT),
-        ),
-      ])) as BunFile | null;
-      if (!convertedFile || !(await convertedFile.exists())) {
-        log[timedOut ? "warn" : "debug"](
-          { file, direction },
-          timedOut
-            ? `Convert timed out after ${MAX_TIME_TO_CONVERT} ms`
-            : "Failed to convert media",
+      if (!isOutdated && ["success", "failed"].includes(convertStatus)) {
+        const { id, direction, file_hash, download_url, created_at, message } = convert!;
+        return {
+          id,
+          status: convertStatus,
+          direction,
+          file_hash,
+          download_url,
+          message,
+          createdAt: created_at,
+          removeOn: getRemoveOnDate(),
+        };
+      }
+
+      if (!convert || isOutdated) {
+        await converterQueue.add(
+          `converter (${direction} ${file_hash})`,
+          {
+            hasOldConvert: isOutdated,
+            direction,
+            file,
+            file_hash,
+          },
+          {
+            removeOnComplete: {
+              age: 3600,
+              count: 1000,
+            },
+            removeOnFail: true,
+            debounce: { id: `${direction}-${file}`, ttl: 5000 },
+          },
         );
-        throw new FailedConvertMedia();
+      }
+
+      if (convert && isOutdated) {
+        convert.message = null;
       }
 
       return {
-        url: getPublicFilePath(convertedFile),
-        removeOn: getRemoveOnDate(),
+        status: "waiting",
+        message: convert?.message ?? "We are converting the file, wait a bit",
       };
     },
     {
