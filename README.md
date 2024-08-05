@@ -8,7 +8,7 @@
 > [!WARNING]
 > Если конвертер находит отдельно аудио и видео дорожку, то конвертер в приоритетном режиме вернет видео с черным фоном и аудио дорожкой.
 
-**[FOSWLY] Media Converter Backend** - API для конвертации медиа различных форматов по ссылке.
+**[FOSWLY] Media Converter Backend** - API для конвертации медиа различных форматов по ссылке. Данное API в первую очередь нацеленно на получение аудио дорожки в .mp4 формате, которая будет работать с ffmpeg, поэтому оно может быть не пригодно для
 
 ## Функционал
 
@@ -22,10 +22,23 @@
 1.  Установите [Bun](https://bun.sh/)
 2.  Установите [ffmpeg](https://ffmpeg.org/)
 3.  Установите [MP4Box](https://github.com/gpac/gpac/) (необходим для конвертации m4a без метаданных, который не поддерживается в ffmpeg)
-4.  Клонируйте репозиторий
-5.  Установите зависимости: `bun install`
-6.  Заполните конфиг: `src/config.ts`
-7.  Запустите сервер: `bun start`
+4.  Установите [yt-dlp](https://github.com/yt-dlp/yt-dlp) (необходим для конвертации m3u8 с `.cmfa` сегментами)
+5.  Установите [aria2c](https://github.com/aria2/aria2) (необходим для ускорения работы yt-dlp)
+6.  Установите PostgreSQL 16+
+7.  Установите Redis 6.2.0+
+8.  Установите зависимости: `bun install`
+9.  Переименуйте .example.env в .env и заполните его
+10. Выполните миграцию базы данных
+
+```bash
+bun migrate
+```
+
+9.  Запустите сервер
+
+```bash
+bun start
+```
 
 Если вы хотите использовать PM2:
 
@@ -40,7 +53,3 @@ bun install -g pm2 && pm2 install pm2-logrotate
 ```bash
 pm2 start ecosystem.config.json
 ```
-
-## Архитектурная схема
-
-<img width="3984" alt="media-converter-backend" src="https://github.com/FOSWLY/media-converter-backend/assets/62353659/af351561-0993-4711-84d3-342a80fb4eb9">
