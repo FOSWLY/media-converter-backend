@@ -1,4 +1,4 @@
-import * as path from "node:path";
+import path from "node:path";
 import { pino, type TransportMultiOptions, type TransportTargetOptions } from "pino";
 
 import config from "./config";
