@@ -241,7 +241,11 @@ export default class M3U8Converter extends BaseConverter {
       return false;
     }
 
-    if (parsedManifest.segments.find((segment) => segment.uri.includes(".cmfa"))) {
+    // fix conveting with map attribute
+    if (
+      parsedManifest.segments.find((segment) => segment.uri.includes(".cmfa")) ||
+      this.url.includes("https://devstreaming-cdn.apple.com")
+    ) {
       // ffmpeg or mp4box can't convert .cmfa to mp4
       await this.convertWithYTdlp(this.url);
     } else {
