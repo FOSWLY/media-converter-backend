@@ -22,11 +22,13 @@ export default class BaseConverter {
   outputFilePath: string;
 
   url: string;
+  extraUrl: string;
   filename: string;
   format: MediaFormat;
 
-  constructor(url: string, format: MediaFormat = "mp4") {
+  constructor(url: string, format: MediaFormat = "mp4", extraUrl: string | null = null) {
     this.url = url;
+    this.extraUrl = extraUrl ?? url;
     this.format = format;
 
     const fileUUID = getUid();
@@ -57,36 +59,36 @@ export default class BaseConverter {
     }
   }
 
-  async convertWithYTdlp(url: string) {
-    // ! don't use:
-    // * -P instead of -o just to set a custom folder for temporary files (it's 4 times slower!)
-    // * --force-overwrites (1.75 times slower, but the probability of colic is too low to sacrifice speed so much)
-    log.debug("Start converting with yt-dlp");
-    const proc = Bun.spawn(
-      [
-        "yt-dlp",
-        "-o",
-        this.outputFilePath,
-        "--external-downloader",
-        "aria2c",
-        "--external-downloader-args",
-        "aria2c:-x 16 -k 1M",
-        url,
-        "--quiet",
-        "--no-warnings",
-      ],
-      {
-        onExit: (_, exitCode, signalCode, error) =>
-          this.onExit(_, exitCode, signalCode, error, "yt-dlp"),
-      },
-    );
-    log.debug("await finish converting with yt-dlp");
-    await proc.exited;
-    log.debug("converting with yt-dlp finished");
-    proc.kill();
+  // async convertWithYTdlp(url: string) {
+  //   // ! don't use:
+  //   // * -P instead of -o just to set a custom folder for temporary files (it's 4 times slower!)
+  //   // * --force-overwrites (1.75 times slower, but the probability of colic is too low to sacrifice speed so much)
+  //   log.debug("Start converting with yt-dlp");
+  //   const proc = Bun.spawn(
+  //     [
+  //       "yt-dlp",
+  //       "-o",
+  //       this.outputFilePath,
+  //       "--external-downloader",
+  //       "aria2c",
+  //       "--external-downloader-args",
+  //       "aria2c:-x 16 -k 1M",
+  //       url,
+  //       "--quiet",
+  //       "--no-warnings",
+  //     ],
+  //     {
+  //       onExit: (_, exitCode, signalCode, error) =>
+  //         this.onExit(_, exitCode, signalCode, error, "yt-dlp"),
+  //     },
+  //   );
+  //   log.debug("await finish converting with yt-dlp");
+  //   await proc.exited;
+  //   log.debug("converting with yt-dlp finished");
+  //   proc.kill();
 
-    return true;
-  }
+  //   return true;
+  // }
 
   async createOutDir() {
     if (!(await exists(this.outPath))) {
