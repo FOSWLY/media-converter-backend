@@ -1,5 +1,5 @@
-import { TranslationTable } from "../schemas/translation";
+import { ConvertTable } from "../schemas/convert";
 
 export interface Database {
-  vot_translations: TranslationTable;
+  mconv_converts: ConvertTable;
 }
