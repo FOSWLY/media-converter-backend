@@ -2,7 +2,7 @@ import { BunFile } from "bun";
 import { Job } from "bullmq";
 
 import { log } from "../logging";
-import { ConvertJobOpts } from "../types/convert";
+import { ConvertJobOpts, MediaFormat } from "../types/convert";
 import ConvertFacade from "../facades/convert";
 import { FailedConvertMedia } from "../errors";
 
@@ -16,7 +16,7 @@ export default abstract class ConverterJob {
   static MAX_TIME_TO_CONVERT = 300_000; // 5 min
 
   static async processor(job: Job<ConvertJobOpts>) {
-    const { hasOldConvert, direction, file, file_hash } = job.data;
+    const { hasOldConvert, direction, file, file_hash, extra_url } = job.data;
     const getBy = {
       direction,
       file_hash,
@@ -29,7 +29,12 @@ export default abstract class ConverterJob {
 
     await convertFacade.create({ ...getBy, status: "waiting" });
 
-    const toFormat = direction.split("-")[1];
+    const [fromFormat, toFormat] = direction.split("-") as [MediaFormat, MediaFormat];
+    if (!/^http(s)?:\/\//.exec(file) && fromFormat !== "mpd") {
+      // only mpd can convert raw data
+      throw new FailedConvertMedia();
+    }
+
     let converter = BaseConverter;
     switch (direction) {
       case "m3u8-mp4":
@@ -46,7 +51,7 @@ export default abstract class ConverterJob {
 
     const convertedFile = (await asyncWithTimelimit(
       ConverterJob.MAX_TIME_TO_CONVERT,
-      new converter(file, toFormat).convert(),
+      new converter(file, toFormat, extra_url).convert(),
       null,
     )) as BunFile | null;
     if (!convertedFile || !(await convertedFile.exists())) {

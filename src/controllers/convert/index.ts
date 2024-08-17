@@ -10,7 +10,7 @@ import { log } from "../../logging";
 export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
     "/",
-    async ({ body: { direction, file } }) => {
+    async ({ body: { direction, file, extra_url } }) => {
       const file_hash = Bun.hash.wyhash(file, config.converters.seed).toString(16);
       const convert = await new ConvertFacade().get({
         direction,
@@ -58,12 +58,13 @@ export default new Elysia().group("/convert", (app) =>
 
       if (!convert || isOutdated) {
         await converterQueue.add(
-          `converter (${direction} ${file_hash})`,
+          `converter (${direction} ${file_hash} ${extra_url})`,
           {
             hasOldConvert: isOutdated,
             direction,
             file,
             file_hash,
+            extra_url,
           },
           {
             removeOnComplete: {

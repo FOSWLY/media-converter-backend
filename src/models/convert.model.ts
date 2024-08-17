@@ -8,7 +8,13 @@ export const convertModels = new Elysia().model({
     direction: ConvertDirection,
     file: t.String({
       // doesn't filter domains starting/ending with .- and-.
-      pattern: `http(s)?://.+.[a-zA-Z]{2,}/.+.(${supportedMedia})(.+)?`,
+      // pattern: `http(s)?://.+.[a-zA-Z]{2,}/.+.(${supportedMedia})(.+)?`,
     }),
+    extra_url: t.Optional(
+      t.String({
+        // doesn't filter domains starting/ending with .- and-.
+        pattern: `http(s)?://.+.[a-zA-Z]{2,}/(.+)?`,
+      }),
+    ),
   }),
 });
