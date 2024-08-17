@@ -1,9 +1,13 @@
+export type SegmentMap = {
+  uri: string;
+};
+
 export type Segment = {
   title?: string;
   duration: number;
   uri: string;
   timeline: number;
-  resolvedUri?: string;
+  map?: SegmentMap;
   byterange?: {
     length: number;
     offset: number;
@@ -33,7 +37,6 @@ export type Playlist = {
   uri: string;
   endList?: boolean;
   timeline: number;
-  resolvedUri?: string;
   discontinuityStarts?: number[];
   timelineStarts?: TimelineStart[];
   mediaSequence?: number;

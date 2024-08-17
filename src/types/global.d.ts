@@ -31,10 +31,10 @@ declare module "m3u8-parser" {
 }
 
 declare module "mpd-parser" {
-  // return m3u8 manifest
+  // return mpd (m3u8 like) manifest
   const parse: (
     manifest: string,
     options: Record<unknown, unknown> = {},
-  ) => import("./m3u8").Manifest;
+  ) => import("./mpd").Manifest;
   const VERSION: string;
 }
