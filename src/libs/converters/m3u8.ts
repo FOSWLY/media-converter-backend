@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 
 import { Parser } from "m3u8-parser";
 
@@ -48,7 +49,7 @@ export default class M3U8Converter extends BaseConverter {
     const completeUrl = new URL(originalURL);
     const filename = completeUrl.pathname.match(this.fileRe)?.[0];
     if (!filename) {
-      log.info(`Unknown filename for ${completeUrl.href}`);
+      log.warn(`Unknown filename for ${completeUrl.href}`);
       return "";
     }
 
@@ -110,61 +111,68 @@ export default class M3U8Converter extends BaseConverter {
     return parsedManifest;
   }
 
+  fetchSegmentsFilter(segment: Segment, idx: number, segments: Segment[]): boolean {
+    if (segment.uri.includes(".ts") || idx === 0) {
+      return true;
+    }
+
+    return !(segment.byterange && segment.byterange.offset > 0 && segment.uri === segments[0].uri);
+  }
+
+  async downloadSegment(segmentUrl: string, segment: Segment | null = null, isPartial = false) {
+    try {
+      const res = await fetchWithTimeout(segmentUrl, {
+        headers: {
+          Range:
+            isPartial && segment
+              ? `bytes=${segment.byterange!.offset}-${segment.byterange!.offset + segment.byterange!.length}`
+              : "bytes=0-",
+        },
+      });
+      return await res.blob();
+    } catch {
+      log.debug(`Failed to download segment from ${segmentUrl}`);
+      return new Blob([]);
+    }
+  }
+
+  async fetchSegmentsDownloader(segment: Segment, idx: number, segments: Segment[]) {
+    const segmentUrl = this.replaceURLFileName(this.url, segment.uri);
+    const isPartial =
+      segment.uri.includes(".ts") && segment.byterange
+        ? !!segments.find(
+            (seg) => seg.uri === segment.uri && seg.byterange?.offset === segment.byterange?.offset,
+          )
+        : false;
+    segment.content = await this.downloadSegment(segmentUrl, segment, isPartial);
+    if (!segment.content.size) {
+      return segment;
+    }
+
+    let filename = getFileNameByUrl(segmentUrl);
+    if (isPartial) {
+      filename = appendToFileName(filename, `_${idx}`);
+      segment.uri = filename;
+    }
+
+    segment.filePath = path.join(this.tempPath, filename);
+    await Bun.write(segment.filePath, segment.content);
+
+    return segment;
+  }
+
   async fetchSegments(segments: Segment[]) {
     return Array.from(
       new Set(
         await Promise.all(
           segments
-            .filter((segment: Segment, idx: number) => {
-              if (segment.uri.includes(".ts") || idx === 0) {
-                return true;
-              }
-
-              return !(
-                segment.byterange &&
-                segment.byterange.offset > 0 &&
-                segment.uri === segments[0].uri
-              );
-            })
-            .map(async (segment: Segment, idx: number) => {
-              const segmentUrl = this.replaceURLFileName(this.url, segment.uri);
-              const isPartial =
-                segment.uri.includes(".ts") && segment.byterange
-                  ? !!segments.find(
-                      (seg) =>
-                        seg.uri === segment.uri &&
-                        seg.byterange?.offset === segment.byterange?.offset,
-                    )
-                  : false;
-              try {
-                const res = await fetchWithTimeout(segmentUrl, {
-                  headers: {
-                    Range: isPartial
-                      ? `bytes=${segment.byterange!.offset}-${segment.byterange!.offset + segment.byterange!.length}`
-                      : "bytes=0-",
-                  },
-                });
-                segment.content = await res.blob();
-              } catch {
-                log.debug(`Failed to download segment from ${segmentUrl}`);
-                segment.content = new Blob([]);
-              }
-
-              if (!segment.content.size) {
-                return segment;
-              }
-
-              let filename = getFileNameByUrl(segmentUrl);
-              if (isPartial) {
-                filename = appendToFileName(filename, `_${idx}`);
-                segment.uri = filename;
-              }
-
-              segment.filePath = path.join(this.tempPath, filename);
-              await Bun.write(segment.filePath, segment.content);
-
-              return segment;
-            }),
+            .filter((segment: Segment, idx: number) =>
+              this.fetchSegmentsFilter(segment, idx, segments),
+            )
+            .map(
+              async (segment: Segment, idx: number) =>
+                await this.fetchSegmentsDownloader(segment, idx, segments),
+            ),
         ),
       ),
     );
@@ -233,6 +241,78 @@ export default class M3U8Converter extends BaseConverter {
     return true;
   }
 
+  async fetchInitSegment(segmentUrl: string) {
+    const content = await this.downloadSegment(segmentUrl);
+    const filePath = path.join(this.tempPath, getFileNameByUrl(segmentUrl));
+    await Bun.write(filePath, content);
+  }
+
+  getFilesBySegments(segments: Segment[]) {
+    const initSegments: string[] = [];
+    const files = segments.reduce((arr, segment) => {
+      if (!segment.map) {
+        arr.push(segment.uri);
+        return arr;
+      }
+
+      const mapUrl = this.replaceURLFileName(this.url, segment.map.uri);
+      if (!initSegments.includes(mapUrl)) {
+        initSegments.push(mapUrl);
+        arr.push(segment.map.uri);
+      }
+
+      arr.push(segment.uri);
+      return arr;
+    }, [] as string[]);
+    return [initSegments, files];
+  }
+
+  async concatSegmentsByMap(segments: Segment[]) {
+    const [initSegments, files] = this.getFilesBySegments(segments);
+    const logData = {
+      path: this.outputFilePath,
+      hasOnlyAudio: this.hasOnlyAudio,
+      originalUrl: this.url,
+    };
+    await Promise.all(initSegments.map(async (segment) => await this.fetchInitSegment(segment)));
+    const output = fs.createWriteStream(this.outputFilePath);
+    let index = 0;
+
+    const tempPath = this.tempPath;
+    return new Promise((resolve, reject) => {
+      function mergeFiles() {
+        if (index >= files.length) {
+          // close stream after all files have been readed
+          output.end();
+          log.debug(logData, "Files successfully concatenated");
+          return resolve(true);
+        }
+
+        const file = path.join(tempPath, files[index]);
+        const input = fs.createReadStream(file);
+        input.pipe(output, { end: false });
+
+        input.on("end", () => {
+          index++;
+          mergeFiles();
+        });
+
+        input.on("error", (err) => {
+          log.error(
+            {
+              file,
+              err,
+            },
+            "Failed to read file",
+          );
+          reject(err);
+        });
+      }
+
+      mergeFiles();
+    });
+  }
+
   async convertToMP4() {
     await this.createOutDir();
     const parsedManifest = await this.getManifestWithBestBandwidth(this.url);
@@ -241,15 +321,12 @@ export default class M3U8Converter extends BaseConverter {
       return false;
     }
 
-    // fix conveting with map attribute
-    if (
-      parsedManifest.segments.find((segment) => segment.uri.includes(".cmfa")) ||
-      this.url.includes("https://devstreaming-cdn.apple.com")
-    ) {
-      // ffmpeg or mp4box can't convert .cmfa to mp4
-      await this.convertWithYTdlp(this.url);
+    parsedManifest.segments = await this.fetchSegments(parsedManifest.segments);
+
+    // fix convert with map
+    if (parsedManifest.segments.find((segment) => !segment.uri.includes(".ts") && segment?.map)) {
+      await this.concatSegmentsByMap(parsedManifest.segments);
     } else {
-      parsedManifest.segments = await this.fetchSegments(parsedManifest.segments);
       await this.mergeSegments(parsedManifest.segments);
     }
 
