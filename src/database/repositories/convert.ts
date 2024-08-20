@@ -36,16 +36,12 @@ export default class ConvertRepository extends BaseRepository {
     }
 
     if (criteria.message !== undefined) {
-      query = query.where(
-        "translated_url",
-        criteria.message === null ? "is" : "=",
-        criteria.message,
-      );
+      query = query.where("message", criteria.message === null ? "is" : "=", criteria.message);
     }
 
     if (criteria.download_url !== undefined) {
       query = query.where(
-        "translated_url",
+        "download_url",
         criteria.download_url === null ? "is" : "=",
         criteria.download_url,
       );

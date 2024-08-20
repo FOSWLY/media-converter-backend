@@ -1,3 +1,7 @@
+# 1.x
+
+- Fix invalid getAll column names
+
 # 1.0.2
 
 - Added support of raw (plain or base64) mpd playlists with set extra_url
