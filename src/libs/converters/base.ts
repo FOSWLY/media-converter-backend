@@ -1,15 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable sonarjs/no-small-switch */
-/* eslint-disable @typescript-eslint/require-await */
+import { ErrorLike, SpawnOptions, Subprocess } from "bun";
+
 import path from "node:path";
 import { mkdir, rmdir, exists } from "node:fs/promises";
 
-import config from "../../config";
-import { getUid } from "../utils";
-import { log } from "../../logging";
-import { MediaFormat } from "../../types/convert";
+import config from "@/config";
+import { log } from "@/logging";
+import { MediaFormat } from "@/types/convert";
+import { getCurrentDate, getUid } from "../utils";
 import { clearFileName } from "../file";
-import { ErrorLike, SpawnOptions, Subprocess } from "bun";
 
 const defaultTempPath = path.join(__dirname, "temp");
 
@@ -34,7 +32,7 @@ export default class BaseConverter {
     const fileUUID = getUid();
     this.filename = `${fileUUID}.${format}`;
 
-    const currentDate = new Date().toLocaleDateString().replaceAll(".", "-").replaceAll("/", "-");
+    const currentDate = getCurrentDate(true);
     this.tempPath = path.join(defaultTempPath, currentDate, fileUUID);
     this.outPath = path.join(config.app.publicPath, "media", format, currentDate);
     this.outputFilePath = path.join(this.outPath, clearFileName(this.filename, `.${format}`));

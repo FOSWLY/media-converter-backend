@@ -1,20 +1,25 @@
-import config from "../config";
 import { BunFile } from "bun";
-import { log } from "../logging";
+
+import config from "@/config";
+import { log } from "@/logging";
 
 function getUid() {
   return Bun.hash.wyhash(Date.now().toString(), config.converters.seed).toString(16);
 }
 
-function getCurrentDate() {
-  return new Date().toLocaleDateString("EN-US").replaceAll("/", "-");
+function getCurrentDate(asBase64: boolean = false) {
+  const date = new Date();
+  const hours = date.getUTCHours();
+  date.setUTCHours(hours % 2 !== 0 ? hours - 1 : hours, 0, 0, 0);
+  const dateString = date.toISOString();
+  return asBase64 ? btoa(dateString) : dateString;
 }
 
-function getRemoveOnDate() {
-  const removeOn = new Date();
-  removeOn.setDate(removeOn.getDate() + 1);
-  removeOn.setHours(2, 0, 0, 0);
-  return removeOn.toISOString();
+function getRemoveOnDate(currentDate: Date) {
+  const removeOnDate = new Date(currentDate);
+  const hours = removeOnDate.getHours();
+  removeOnDate.setHours(hours % 2 === 0 ? hours + 1 : hours + 2, 0, 0, 0);
+  return removeOnDate.toISOString();
 }
 
 function getPublicFilePath(file: BunFile) {

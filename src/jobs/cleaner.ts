@@ -3,14 +3,14 @@ import { readdir, rmdir } from "node:fs/promises";
 
 import { Job } from "bullmq";
 
-import config from "../config";
-import { getCurrentDate } from "../libs/utils";
-import { log } from "../logging";
-import ConvertFacade from "../facades/convert";
+import config from "@/config";
+import ConvertFacade from "@/facades/convert";
+import { getCurrentDate } from "@/libs/utils";
+import { log } from "@/logging";
 
 export default abstract class CleanerJob {
   static async clean(clearPath: string) {
-    const currentDate = getCurrentDate();
+    const currentDate = getCurrentDate(true);
     const files = await readdir(clearPath);
     return await Promise.all(
       files
@@ -25,10 +25,12 @@ export default abstract class CleanerJob {
   }
 
   static async processor() {
+    const currentDate = getCurrentDate();
+    const date = new Date(currentDate);
     await CleanerJob.clean(path.join(config.app.publicPath, "media", "mp4")); // public
     await CleanerJob.clean(path.join(__dirname, "../libs/converters/temp")); // temp
 
-    await new ConvertFacade().deleteByLessTime(new Date()); // remove all converts less date
+    await new ConvertFacade().deleteByLessTime(date); // remove all converts less date
   }
 
   static onFailed(job: Job | undefined, error: Error) {
