@@ -1,3 +1,5 @@
+import { ErrorLike, SpawnOptions, Subprocess } from "bun";
+
 import path from "node:path";
 import fs from "node:fs";
 
@@ -6,10 +8,9 @@ import { Parser } from "m3u8-parser";
 import BaseConverter from "./base";
 import { appendToFileName, getFileNameByUrl } from "../file";
 import { fetchWithTimeout } from "../network";
-import config from "../../config";
-import { log } from "../../logging";
-import { Manifest, MediaGroup, Playlist, Segment } from "../../types/m3u8";
-import { ErrorLike, SpawnOptions, Subprocess } from "bun";
+import config from "@/config";
+import { log } from "@/logging";
+import { Manifest, MediaGroup, Playlist, Segment } from "@/types/m3u8";
 
 export default class M3U8Converter extends BaseConverter {
   // 3-4 times faster than m3u8-to-mp4 (JS | https://github.com/furkaninanc/m3u8-to-mp4)

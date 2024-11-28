@@ -1,6 +1,6 @@
-import { db } from "../database";
-import { ConvertUpdate, Convert, NewConvert, GetConvertOpts } from "../../schemas/convert";
 import BaseRepository from "./base";
+import { db } from "../database";
+import { ConvertUpdate, Convert, NewConvert, GetConvertOpts } from "@/schemas/convert";
 
 export default class ConvertRepository extends BaseRepository {
   constructor() {

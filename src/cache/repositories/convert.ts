@@ -1,5 +1,5 @@
-import { Convert, ConvertUpdate, GetConvertOpts } from "../../schemas/convert";
-import { MediaDirection, mediaDirections } from "../../types/convert";
+import { Convert, ConvertUpdate, GetConvertOpts } from "@/schemas/convert";
+import { MediaDirection, mediaDirections } from "@/types/convert";
 import { cache } from "../cache";
 import BaseRepository from "./base";
 

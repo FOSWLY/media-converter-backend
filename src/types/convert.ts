@@ -7,7 +7,6 @@ export const mediaDirections = mediaFormats
 export type ConvertStatus = "success" | "waiting" | "failed";
 
 export type ConvertJobOpts = {
-  hasOldConvert: boolean;
   direction: MediaDirection;
   file: string;
   file_hash: string;

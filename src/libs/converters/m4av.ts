@@ -3,8 +3,8 @@ import path from "node:path";
 import BaseConverter from "./base";
 import { fetchWithTimeout } from "../network";
 import { getFileNameByUrl } from "../file";
-import config from "../../config";
-import { log } from "../../logging";
+import config from "@/config";
+import { log } from "@/logging";
 
 export default class M4AVConverter extends BaseConverter {
   async fetchM4av(url: string): Promise<[Blob, string]> {

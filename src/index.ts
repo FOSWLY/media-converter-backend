@@ -1,29 +1,27 @@
-import fs from "fs";
-import { mkdir } from "node:fs/promises";
+import fs from "node:fs/promises";
 
 import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { staticPlugin } from "@elysiajs/static";
 import { HttpStatusCode } from "elysia-http-status-code";
 
-import config from "./config";
-import { log } from "./logging";
+import config from "@/config";
+import { log } from "@/logging";
+import { initCleaner } from "@/worker";
 import {
   InternalServerError,
   UnAuthorizedError,
   VideoFileCouldntFound,
   UnSupportedMediaType,
   FailedConvertMedia,
-} from "./errors";
+} from "@/errors";
+import { validateAuthToken } from "@/libs/security";
 
-import { validateAuthToken } from "./libs/security";
+import healthController from "@/controllers/health";
+import convertController from "@/controllers/convert";
 
-import healthController from "./controllers/health";
-import convertController from "./controllers/convert";
-import { initCleaner } from "./worker";
-
-if (!fs.existsSync(config.logging.logPath)) {
-  await mkdir(config.logging.logPath, { recursive: true });
+if (!(await fs.exists(config.logging.logPath))) {
+  await fs.mkdir(config.logging.logPath, { recursive: true });
   log.info(`Created log directory`);
 }
 

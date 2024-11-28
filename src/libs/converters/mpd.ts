@@ -1,11 +1,12 @@
 import path from "node:path";
 
-import { log } from "../../logging";
+import { parse } from "mpd-parser";
 
 import M4AVConverter from "./m4av";
 import M3U8Converter from "./m3u8";
-import { parse } from "mpd-parser";
-import { Playlist, Segment, AudioGroupItem, MediaGroup } from "../../types/mpd";
+
+import { log } from "@/logging";
+import { Playlist, Segment, AudioGroupItem, MediaGroup } from "@/types/mpd";
 import { fetchWithTimeout } from "../network";
 import { appendToFileName, getFileNameByUrl } from "../file";
 

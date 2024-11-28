@@ -1,6 +1,6 @@
-import ConvertCacheRepository from "../cache/repositories/convert";
-import ConvertDBRepository from "../database/repositories/convert";
-import { GetConvertOpts, NewConvert, Convert, ConvertUpdate } from "../schemas/convert";
+import ConvertCacheRepository from "@/cache/repositories/convert";
+import ConvertDBRepository from "@/database/repositories/convert";
+import { GetConvertOpts, NewConvert, Convert, ConvertUpdate } from "@/schemas/convert";
 import BaseFacade from "./base";
 
 export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, ConvertDBRepository> {

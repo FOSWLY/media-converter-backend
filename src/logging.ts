@@ -1,7 +1,7 @@
 import path from "node:path";
 import { pino, type TransportMultiOptions, type TransportTargetOptions } from "pino";
 
-import config from "./config";
+import config from "@/config";
 
 const { loki } = config.logging;
 const startingDate = new Date().toISOString().split("T")[0];
@@ -24,7 +24,7 @@ const opts: PinoOpts = {
   },
 };
 
-// it may be higher level than global, but it cann't be lower
+// it may be higher level than global, but it can't be lower
 opts.transport.targets.push({
   level: config.logging.level,
   target: "pino-pretty",

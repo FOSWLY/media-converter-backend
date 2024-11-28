@@ -1,6 +1,7 @@
-import { getUid } from "./utils";
+import checkDiskSpace from "check-disk-space";
 
-import config from "../config";
+import config from "@/config";
+import { getUid } from "./utils";
 
 function clearFileName(filename: string, filetype = ""): string {
   if (filename.trim().length === 0) {
@@ -39,4 +40,24 @@ function appendToFileName(filename: string, text: string): string {
   return name + text + (ext ? `.${ext}` : "");
 }
 
-export { clearFileName, getFileNameByUrl, getInfoByFileName, appendToFileName };
+function byteToMegaByte(n: number) {
+  return n / Math.pow(10, 6);
+}
+
+async function checkAvailableSpace() {
+  const space = await checkDiskSpace(config.app.publicPath);
+  const freeMegabytes = byteToMegaByte(space.free);
+  return {
+    freeMegabytes,
+    isOk: freeMegabytes >= config.converters.minAvailableMegabytes,
+  };
+}
+
+export {
+  clearFileName,
+  getFileNameByUrl,
+  getInfoByFileName,
+  appendToFileName,
+  byteToMegaByte,
+  checkAvailableSpace,
+};
