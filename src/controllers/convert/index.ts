@@ -1,11 +1,11 @@
 import { Elysia } from "elysia";
 
-import { convertModels } from "../../models/convert.model";
-import { converterQueue } from "../../worker";
-import config from "../../config";
-import ConvertFacade from "../../facades/convert";
-import { getRemoveOnDate } from "../../libs/utils";
-import { log } from "../../logging";
+import config from "@/config";
+import ConvertFacade from "@/facades/convert";
+import { convertModels } from "@/models/convert.model";
+import { converterQueue } from "@/worker";
+import { getRemoveOnDate } from "@/libs/utils";
+import { checkAvailableSpace } from "@/libs/file";
 
 export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
@@ -18,32 +18,9 @@ export default new Elysia().group("/convert", (app) =>
       });
 
       const convertStatus = String(convert?.status);
-      let isOutdated = false;
-      if (convertStatus === "success") {
-        // if the time is close to deleting the data, then we make it obsolete
-        const convertDate = new Date(convert!.created_at);
-        const currentTime = Date.now();
-        const potentialOutdateTime = new Date(convertDate).setHours(2, 0, 0, 0);
-
-        // currentTime > potentialOutdateTime = false (too new, maybe the cleaning has already been done today)
-        // potentialOutdateTime - config.db.outdatedInAdvance < convertDate.getTime() = false (it has already been done this day and will not be deleted during cleaning)
-        isOutdated =
-          currentTime < potentialOutdateTime
-            ? convertDate.getTime() < potentialOutdateTime - config.db.outdatedInAdvance
-            : false;
-        log.debug(
-          {
-            isOutdated,
-            convertDate,
-            currentTime,
-            potentialOutdateTime,
-          },
-          `Convert status: ${isOutdated ? "outdated" : "actual"}`,
-        );
-      }
-
-      if (!isOutdated && ["success", "failed"].includes(convertStatus)) {
+      if (["success", "failed"].includes(convertStatus)) {
         const { id, direction, file_hash, download_url, created_at, message } = convert!;
+        const createdAtDate = new Date(created_at);
         return {
           id,
           status: convertStatus,
@@ -52,15 +29,23 @@ export default new Elysia().group("/convert", (app) =>
           download_url,
           message,
           createdAt: created_at,
-          removeOn: getRemoveOnDate(),
+          removeOn: getRemoveOnDate(createdAtDate),
         };
       }
 
-      if (!convert || isOutdated) {
+      if (!convert) {
+        const availableSpace = await checkAvailableSpace();
+        if (!availableSpace.isOk) {
+          return {
+            status: "failed",
+            message:
+              "There isn't enough space available on the server to perform the convert. Please wait until the next automatic cleanup (every 2 hours) to continue.",
+          };
+        }
+
         await converterQueue.add(
           `converter (${direction} ${file_hash} ${extra_url})`,
           {
-            hasOldConvert: isOutdated,
             direction,
             file,
             file_hash,
@@ -77,7 +62,7 @@ export default new Elysia().group("/convert", (app) =>
         );
       }
 
-      if (convert && isOutdated) {
+      if (convert) {
         convert.message = null;
       }
 
