@@ -1,6 +1,20 @@
-# 1.x
+# 1.1.0
 
-- Fix invalid getAll column names
+- The database schema has been changed
+
+  `id` serial -> BigInt (identity column)
+  `created_at` timestamp -> timestamptz
+
+- Added config validation
+- Added available disk space check
+- Added health respose model
+- Improved disk space cleanup system
+- Updated imports with `@` paths
+- Deleted `isOutdated` check
+- Rewrited "Repeatable jobs" to the new "Job Schedulers"
+- Fix invalid getAll criterias
+- Removed SonarJS eslint plugin
+- Updated depends
 
 # 1.0.2
 

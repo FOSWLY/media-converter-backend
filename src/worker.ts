@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Queue, QueueBaseOptions, Worker } from "bullmq";
 
-import config from "./config";
-import CleanerJob from "./jobs/cleaner";
-import ConvertJob from "./jobs/convert";
-import { log } from "./logging";
+import config from "@/config";
+import CleanerJob from "@/jobs/cleaner";
+import ConvertJob from "@/jobs/convert";
+import { log } from "@/logging";
 
 const { host, port, username, password } = config.redis;
 
@@ -34,16 +34,11 @@ export const converterWorker = new Worker("converter", ConvertJob.processor, {
   concurrency: converterConcurrency,
 })
   .on("completed", ConvertJob.onCompleted)
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   .on("failed", ConvertJob.onFailed);
 
 export async function initCleaner() {
   log.info("Cleaner initialized");
-  await cleanerQueue.add("clean-files", null, {
-    repeat: {
-      pattern: "0 0 2 * * *",
-    },
-    removeOnComplete: true,
-    removeOnFail: true,
+  await cleanerQueue.upsertJobScheduler("clean-files", {
+    every: 7_200_000, // 2 hours
   });
 }
