@@ -2,7 +2,11 @@ declare module "bun" {
   interface Env {
     SERVICE_TOKEN: string;
     SERVICE_PORT: number;
+    SERVICE_HOST: string; // not equal with SERVICE_HOSTNAME!!!
     SERVICE_HOSTNAME: string;
+    APP_NAME: string;
+    APP_DESC: string;
+    APP_CONTACT_EMAIL: string;
     POSTGRES_NAME: string;
     POSTGRES_HOST: string;
     POSTGRES_PORT: number;
