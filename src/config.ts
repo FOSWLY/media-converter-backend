@@ -1,60 +1,49 @@
 import path from "node:path";
-import { type Level } from "pino";
 
-import { version } from "../package.json";
+import { Value } from "@sinclair/typebox/value";
 
-export default {
+import { ConfigSchema } from "@/schemas/config";
+
+export default Value.Parse(ConfigSchema, {
   server: {
-    port: Bun.env.SERVICE_PORT ?? 3001,
-    hostname: "0.0.0.0",
+    port: Bun.env.SERVICE_PORT,
+    hostname: Bun.env.SERVICE_HOST,
   },
   app: {
-    name: "[FOSWLY] Media Converter Backend",
-    desc: "",
-    version,
-    license: "MIT",
-    github_url: "https://github.com/FOSWLY/media-converter-backend",
-    contact_email: "me@toil.cc",
-    scalarCDN: "https://unpkg.com/@scalar/api-reference@1.15.1/dist/browser/standalone.js",
+    name: Bun.env.APP_NAME,
+    desc: Bun.env.APP_DESC,
+    contact_email: Bun.env.APP_CONTACT_EMAIL,
     publicPath: path.join(__dirname, "..", "public"),
-    hostname: Bun.env.SERVICE_HOSTNAME ?? "http://127.0.0.1:3001", // domain for public access
+    hostname: Bun.env.SERVICE_HOSTNAME,
   },
-  cors: {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "*",
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Max-Age": "86400",
-  },
+  cors: {},
   logging: {
-    level: (Bun.env.NODE_ENV === "production" ? "info" : "debug") as Level,
+    level: Bun.env.NODE_ENV === "production" ? "info" : "debug",
     logPath: path.join(__dirname, "..", "logs"),
     loki: {
-      host: Bun.env.LOKI_HOST ?? "",
-      user: Bun.env.LOKI_USER ?? "",
-      password: Bun.env.LOKI_PASSWORD ?? "",
-      label: Bun.env.LOKI_LABEL ?? "media-converter-backend",
+      host: Bun.env.LOKI_HOST,
+      user: Bun.env.LOKI_USER,
+      password: Bun.env.LOKI_PASSWORD,
+      label: Bun.env.LOKI_LABEL,
     },
   },
   db: {
-    name: Bun.env.POSTGRES_NAME ?? "mconv-backend",
-    host: Bun.env.POSTGRES_HOST ?? "127.0.0.1",
-    port: Bun.env.POSTGRES_PORT ?? 5432,
-    user: Bun.env.POSTGRES_USER ?? "postgres",
-    password: Bun.env.POSTGRES_PASSWORD ?? "postgres",
-    outdatedInAdvance: 6_300_000, // the time before deleting the data, after which we mark it as outdated (in ms). It should take less than 2 hours not to convert newly received files again!
+    name: Bun.env.POSTGRES_NAME,
+    host: Bun.env.POSTGRES_HOST,
+    port: Bun.env.POSTGRES_PORT,
+    user: Bun.env.POSTGRES_USER,
+    password: Bun.env.POSTGRES_PASSWORD,
   },
   redis: {
-    host: Bun.env.REDIS_HOST ?? "127.0.0.1",
-    port: Bun.env.REDIS_PORT ?? 6379,
-    username: Bun.env.REDIS_USER ?? "default",
-    password: Bun.env.REDIS_PASSWORD ?? "",
-    prefix: Bun.env.REDIS_PREFIX ?? "mconvb", // Only for DB caching. BullMQ uses other prefix!
-    ttl: Bun.env.REDIS_TTL ?? 7200, // Only for DB caching. BullMQ uses own impl
+    host: Bun.env.REDIS_HOST,
+    port: Bun.env.REDIS_PORT,
+    username: Bun.env.REDIS_USER,
+    password: Bun.env.REDIS_PASSWORD,
+    prefix: Bun.env.REDIS_PREFIX,
+    ttl: Bun.env.REDIS_TTL,
   },
+  navigation: {},
   converters: {
-    bannedChars: ["\\", "/", ":", "*", "?", '"', "<", ">", "|"],
-    publicPrefix: "/v1/public",
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
-    seed: BigInt(Bun.env.SEED) ?? 0xabcdn,
+    seed: Bun.env.SEED ? BigInt(Bun.env.SEED) : undefined,
   },
-};
+});
