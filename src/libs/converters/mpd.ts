@@ -51,8 +51,10 @@ export default class MPDConverter extends M3U8Converter {
         },
       });
       segment.content = await res.blob();
-    } catch {
-      log.debug(`Failed to download segment from ${segment.resolvedUri}`);
+    } catch (err) {
+      log.debug(
+        `Failed to download segment from ${segment.resolvedUri}, because: ${(err as Error).message}`,
+      );
       segment.content = new Blob([]);
     }
 

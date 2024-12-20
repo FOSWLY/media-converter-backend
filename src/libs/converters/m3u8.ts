@@ -290,6 +290,12 @@ export default class M3U8Converter extends BaseConverter {
         }
 
         const file = path.join(tempPath, files[index]);
+        if (!fs.existsSync(file)) {
+          log.debug(`File not found ${index}`);
+          index++;
+          return mergeFiles();
+        }
+
         const input = fs.createReadStream(file);
         input.pipe(output, { end: false });
 
