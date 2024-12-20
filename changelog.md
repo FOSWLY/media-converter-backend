@@ -1,3 +1,7 @@
+# 1.1.1
+
+- Fix crash when trying to concat segments without existing files
+
 # 1.1.0
 
 - The database schema has been changed
