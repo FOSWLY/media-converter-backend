@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { describe, expect, test } from "bun:test";
 import M3U8Converter from "../src/libs/converters/m3u8";
 

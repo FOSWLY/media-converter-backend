@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { describe, expect, test } from "bun:test";
 import { getFileNameByUrl, clearFileName } from "../src/libs/file";
 
