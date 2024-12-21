@@ -110,6 +110,7 @@ export default class BaseConverter {
     return Bun.file(path.join(this.outPath, this.filename));
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async convertToMP4(): Promise<any> {
     throw new Error("Not implemented");
   }

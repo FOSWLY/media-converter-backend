@@ -7,7 +7,7 @@ function getUid() {
   return Bun.hash.wyhash(Date.now().toString(), config.converters.seed).toString(16);
 }
 
-function getCurrentDate(asBase64: boolean = false) {
+function getCurrentDate(asBase64 = false) {
   const date = new Date();
   const hours = date.getUTCHours();
   date.setUTCHours(hours % 2 !== 0 ? hours - 1 : hours, 0, 0, 0);
