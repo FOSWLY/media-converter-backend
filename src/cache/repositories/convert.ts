@@ -22,25 +22,34 @@ export default class ConvertRepository extends BaseRepository {
       directions = directions.filter((direction) => direction === criteria.direction);
     }
 
-    const result = [];
-    for await (const direction of directions) {
-      const cached = await cache.hgetall(this.getKey(direction));
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      for (const [_, val] of Object.entries(cached)) {
-        const data = JSON.parse(val) as Convert;
-        if (
-          (criteria.id && data.id !== criteria.id) ??
-          (criteria.file_hash && data.file_hash !== criteria.file_hash) ??
-          (criteria.message && data.message !== criteria.message) ??
-          (criteria.download_url && data.download_url !== criteria.download_url) ??
-          (criteria.created_at && data.created_at !== criteria.created_at)
-        ) {
-          continue;
-        }
+    const cachedResults = await Promise.all(
+      directions.map((direction) => cache.hgetall(this.getKey(direction))),
+    );
 
-        result.push(data);
+    const result = cachedResults.reduce((result, cached) => {
+      const converts: Convert[] = Object.values(cached)
+        .map((value) => {
+          const data = JSON.parse(value) as Convert;
+          if (
+            (criteria.id && data.id !== criteria.id) ??
+            (criteria.file_hash && data.file_hash !== criteria.file_hash) ??
+            (criteria.message && data.message !== criteria.message) ??
+            (criteria.download_url && data.download_url !== criteria.download_url) ??
+            (criteria.created_at && data.created_at !== criteria.created_at)
+          ) {
+            return false;
+          }
+
+          return data;
+        })
+        .filter((value) => value !== false);
+
+      if (converts) {
+        result.push(...converts);
       }
-    }
+
+      return result;
+    }, [] as Convert[]);
 
     return result;
   }
