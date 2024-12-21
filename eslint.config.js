@@ -1,5 +1,4 @@
 import js from "@eslint/js";
-// import globals from "globals";
 import oxlint from "eslint-plugin-oxlint";
 import tseslint from "typescript-eslint";
 
