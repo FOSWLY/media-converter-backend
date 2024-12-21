@@ -1,6 +1,12 @@
+# 1.1.2
+
+- Refactored logic for `getAll` converts from cache
+- Fix lint errors
+
 # 1.1.1
 
-- Fix crash when trying to concat segments without existing files
+- Fixed crash when trying to concat segments without existing files
+- Updated depends
 
 # 1.1.0
 
