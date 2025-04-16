@@ -1,3 +1,10 @@
+# 1.1.3
+
+- Added `LOG_TO_FILE` env property
+- Replaced set cors logic to `@elysiajs/cors`
+- Lib `pino` and pino modules replaced with `@vaylo/pino`
+- Bump depends
+
 # 1.1.2
 
 - Refactored logic for `getAll` converts from cache
