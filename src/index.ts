@@ -1,7 +1,6 @@
-import fs from "node:fs/promises";
-
 import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
+import { cors } from "@elysiajs/cors";
 import { staticPlugin } from "@elysiajs/static";
 import { HttpStatusCode } from "elysia-http-status-code";
 
@@ -19,11 +18,6 @@ import { validateAuthToken } from "@/libs/security";
 
 import healthController from "@/controllers/health";
 import convertController from "@/controllers/convert";
-
-if (!(await fs.exists(config.logging.logPath))) {
-  await fs.mkdir(config.logging.logPath, { recursive: true });
-  log.info(`Created log directory`);
-}
 
 const app = new Elysia({ prefix: "/v1" })
   .use(
@@ -47,16 +41,12 @@ const app = new Elysia({ prefix: "/v1" })
     }),
   )
   .use(HttpStatusCode())
+  .use(cors(config.cors))
   .use(
     staticPlugin({
       alwaysStatic: false,
     }),
   )
-  .onRequest(({ set }) => {
-    for (const [key, val] of Object.entries(config.cors)) {
-      set.headers[key] = val;
-    }
-  })
   .error({
     UNAUTHORIZED_ERROR: UnAuthorizedError,
     INTERNAL_SERVER_ERROR: InternalServerError,
@@ -87,7 +77,7 @@ const app = new Elysia({ prefix: "/v1" })
     }
 
     return {
-      error: error.message,
+      error: (error as Error).message,
     };
   })
   .use(healthController)
