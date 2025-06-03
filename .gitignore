@@ -2,6 +2,7 @@
 
 .env
 .vscode
+.husky
 public/media
 temp/
 

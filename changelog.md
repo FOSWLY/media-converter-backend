@@ -1,3 +1,10 @@
+# 1.1.4
+
+- Migrated from `prettier` to `biome`
+- Migrated from `husky` to `lefthook`
+- Removed `eslint-oxlint-plugin`
+- Bump depends
+
 # 1.1.3
 
 - Added `LOG_TO_FILE` env property
