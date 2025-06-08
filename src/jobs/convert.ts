@@ -1,16 +1,16 @@
-import { BunFile } from "bun";
 import { Job } from "bullmq";
+import { BunFile } from "bun";
 
 import BaseConverter from "@/libs/converters/base";
-import M4AVConverter from "@/libs/converters/m4av";
 import M3U8Converter from "@/libs/converters/m3u8";
+import M4AVConverter from "@/libs/converters/m4av";
 import MPDConverter from "@/libs/converters/mpd";
 
-import ConvertFacade from "@/facades/convert";
-import { log } from "@/logging";
 import { FailedConvertMedia } from "@/errors";
-import { ConvertJobOpts, MediaFormat } from "@/types/convert";
+import { convertFacade } from "@/facades/convert";
 import { asyncWithTimelimit, getPublicFilePath } from "@/libs/utils";
+import { log } from "@/logging";
+import { ConvertJobOpts, MediaFormat } from "@/types/convert";
 
 export default abstract class ConverterJob {
   static MAX_TIME_TO_CONVERT = 300_000; // 5 min
@@ -22,10 +22,12 @@ export default abstract class ConverterJob {
       file_hash,
     };
 
-    const convertFacade = new ConvertFacade();
     await convertFacade.create({ ...getBy, status: "waiting" });
 
-    const [fromFormat, toFormat] = direction.split("-") as [MediaFormat, MediaFormat];
+    const [fromFormat, toFormat] = direction.split("-") as [
+      MediaFormat,
+      MediaFormat,
+    ];
     if (!/^http(s)?:\/\//.exec(file) && fromFormat !== "mpd") {
       // only mpd can convert raw data
       throw new FailedConvertMedia();
@@ -45,11 +47,11 @@ export default abstract class ConverterJob {
         break;
     }
 
-    const convertedFile = (await asyncWithTimelimit(
+    const convertedFile = await asyncWithTimelimit<BunFile | null>(
       ConverterJob.MAX_TIME_TO_CONVERT,
       new converter(file, toFormat, extra_url).convert(),
       null,
-    )) as BunFile | null;
+    );
     if (!convertedFile || !(await convertedFile.exists())) {
       throw new FailedConvertMedia();
     }
@@ -69,7 +71,7 @@ export default abstract class ConverterJob {
     }
 
     const { direction, file_hash } = job.data;
-    await new ConvertFacade().update(
+    await convertFacade.update(
       { direction, file_hash },
       {
         status: "failed",

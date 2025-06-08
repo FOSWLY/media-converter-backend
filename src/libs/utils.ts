@@ -4,7 +4,9 @@ import config from "@/config";
 import { log } from "@/logging";
 
 function getUid() {
-  return Bun.hash.wyhash(Date.now().toString(), config.converters.seed).toString(16);
+  return Bun.hash
+    .wyhash(Date.now().toString(), config.converters.seed)
+    .toString(16);
 }
 
 function getCurrentDate(asBase64 = false) {
@@ -26,11 +28,14 @@ function getPublicFilePath(file: BunFile) {
   return (
     config.app.hostname +
     config.converters.publicPrefix +
-    file.name?.replace(config.app.publicPath, "").replaceAll("\\\\", "/").replaceAll("\\", "/")
+    file.name
+      ?.replace(config.app.publicPath, "")
+      .replaceAll("\\\\", "/")
+      .replaceAll("\\", "/")
   );
 }
 
-async function asyncWithTimelimit(
+async function asyncWithTimelimit<T>(
   maxTime: number,
   task: Promise<unknown>,
   failureValue: unknown = null,
@@ -49,7 +54,13 @@ async function asyncWithTimelimit(
     clearTimeout(timer);
   }
 
-  return response;
+  return response as T;
 }
 
-export { getUid, getCurrentDate, getRemoveOnDate, getPublicFilePath, asyncWithTimelimit };
+export {
+  getUid,
+  getCurrentDate,
+  getRemoveOnDate,
+  getPublicFilePath,
+  asyncWithTimelimit,
+};
