@@ -16,6 +16,7 @@ declare module "bun" {
     REDIS_PORT: number;
     REDIS_USER: string;
     REDIS_PASSWORD: string;
+    LOG_TO_FILE: string;
     LOKI_HOST: string;
     LOKI_USER: string;
     LOKI_PASSWORD: string;
@@ -39,7 +40,7 @@ declare module "mpd-parser" {
   // return mpd (m3u8 like) manifest
   const parse: (
     manifest: string,
-    options: Record<unknown, unknown> = {},
+    options: Record<unknown, unknown> = {}
   ) => import("./mpd").Manifest;
   const VERSION: string;
 }
