@@ -1,25 +1,28 @@
 import { Elysia } from "elysia";
 
 import config from "@/config";
-import ConvertFacade from "@/facades/convert";
+import { convertFacade } from "@/facades/convert";
+import { checkAvailableSpace } from "@/libs/file";
+import { getRemoveOnDate } from "@/libs/utils";
 import { convertModels } from "@/models/convert.model";
 import { converterQueue } from "@/worker";
-import { getRemoveOnDate } from "@/libs/utils";
-import { checkAvailableSpace } from "@/libs/file";
 
 export default new Elysia().group("/convert", (app) =>
   app.use(convertModels).post(
     "/",
     async ({ body: { direction, file, extra_url } }) => {
-      const file_hash = Bun.hash.wyhash(file, config.converters.seed).toString(16);
-      const convert = await new ConvertFacade().get({
+      const file_hash = Bun.hash
+        .wyhash(file, config.converters.seed)
+        .toString(16);
+      const convert = await convertFacade.get({
         direction,
         file_hash,
       });
 
       const convertStatus = String(convert?.status);
       if (["success", "failed"].includes(convertStatus)) {
-        const { id, direction, file_hash, download_url, created_at, message } = convert!;
+        const { id, direction, file_hash, download_url, created_at, message } =
+          convert!;
         const createdAtDate = new Date(created_at);
         return {
           id,

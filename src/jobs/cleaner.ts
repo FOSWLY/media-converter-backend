@@ -1,10 +1,10 @@
-import path from "node:path";
 import { readdir, rmdir } from "node:fs/promises";
+import path from "node:path";
 
 import { Job } from "bullmq";
 
 import config from "@/config";
-import ConvertFacade from "@/facades/convert";
+import { convertFacade } from "@/facades/convert";
 import { getCurrentDate } from "@/libs/utils";
 import { log } from "@/logging";
 
@@ -30,7 +30,7 @@ export default abstract class CleanerJob {
     await CleanerJob.clean(path.join(config.app.publicPath, "media", "mp4")); // public
     await CleanerJob.clean(path.join(__dirname, "../libs/converters/temp")); // temp
 
-    await new ConvertFacade().deleteByLessTime(date); // remove all converts less date
+    await convertFacade.deleteByLessTime(date); // remove all converts less date
   }
 
   static onFailed(job: Job | undefined, error: Error) {

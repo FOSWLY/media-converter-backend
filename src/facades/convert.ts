@@ -1,9 +1,17 @@
 import ConvertCacheRepository from "@/cache/repositories/convert";
 import ConvertDBRepository from "@/database/repositories/convert";
-import { GetConvertOpts, NewConvert, Convert, ConvertUpdate } from "@/schemas/convert";
+import {
+  Convert,
+  ConvertUpdate,
+  GetConvertOpts,
+  NewConvert,
+} from "@/schemas/convert";
 import BaseFacade from "./base";
 
-export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, ConvertDBRepository> {
+export default class ConvertFacade extends BaseFacade<
+  ConvertCacheRepository,
+  ConvertDBRepository
+> {
   constructor() {
     super(new ConvertCacheRepository(), new ConvertDBRepository());
   }
@@ -14,7 +22,7 @@ export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, Co
       return cached;
     }
 
-    const result = (await this.dbRepository.get(getBy)) as Convert | undefined;
+    const result = await this.dbRepository.get(getBy);
     if (result) {
       await this.cacheRepository.create(result);
     }
@@ -31,7 +39,10 @@ export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, Co
     return (await this.dbRepository.getAll(criteria)) as Convert[];
   }
 
-  async update(getBy: GetConvertOpts, updateWith: ConvertUpdate): Promise<boolean> {
+  async update(
+    getBy: GetConvertOpts,
+    updateWith: ConvertUpdate,
+  ): Promise<boolean> {
     await this.dbRepository.update(getBy, updateWith);
     const result = await this.dbRepository.get({
       direction: updateWith.direction ?? getBy.direction,
@@ -52,8 +63,8 @@ export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, Co
       return result;
     }
 
-    await this.cacheRepository.create(result as Convert);
-    return result as Convert;
+    await this.cacheRepository.create(result);
+    return result;
   }
 
   async delete(getBy: GetConvertOpts): Promise<Convert | undefined> {
@@ -70,7 +81,7 @@ export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, Co
     }
 
     for (const convert of result) {
-      const { direction, file_hash } = convert as Convert;
+      const { direction, file_hash } = convert;
       await this.cacheRepository.delete({
         direction,
         file_hash,
@@ -86,12 +97,14 @@ export default class ConvertFacade extends BaseFacade<ConvertCacheRepository, Co
       return;
     }
 
-    const { direction, file_hash } = result as Convert;
+    const { direction, file_hash } = result;
     await this.cacheRepository.delete({
       direction,
       file_hash,
     });
 
-    return result as Convert;
+    return result;
   }
 }
+
+export const convertFacade = new ConvertFacade();
