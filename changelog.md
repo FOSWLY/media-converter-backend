@@ -1,3 +1,9 @@
+# 1.1.5
+
+- Added const value for facade classes
+- Added `LOG_TO_FILE` env property for config
+- Improved some types
+
 # 1.1.4
 
 - Migrated from `prettier` to `biome`
